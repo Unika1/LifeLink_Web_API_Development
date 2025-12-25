@@ -1,4 +1,3 @@
-// app/(auth)/register/page.tsx
 "use client";
 
 import Link from "next/link";
@@ -8,24 +7,31 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="flex flex-col items-center">
-      <h1 className="text-2xl font-semibold text-zinc-800">Create Account</h1>
+    <div className="flex w-full max-w-md flex-col items-center text-zinc-900">
+      {/* Title */}
+      <h1 className="mb-8 text-2xl font-semibold text-zinc-900">
+        Create Account
+      </h1>
 
       {/* Social buttons */}
-      <div className="mt-8 grid w-full grid-cols-2 gap-4">
+      <div className="grid w-full grid-cols-2 gap-4">
         <button
           type="button"
-          className="flex items-center justify-center gap-2 rounded-md border border-zinc-200 bg-white py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+          className="flex items-center justify-center gap-2 rounded-md
+                     border border-zinc-200 bg-white py-2
+                     text-sm text-zinc-700 hover:bg-zinc-50"
         >
-          <span className="text-base">G</span>
+          <span className="text-base font-semibold">G</span>
           Sign Up With Google
         </button>
 
         <button
           type="button"
-          className="flex items-center justify-center gap-2 rounded-md border border-zinc-200 bg-white py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+          className="flex items-center justify-center gap-2 rounded-md
+                     border border-zinc-200 bg-white py-2
+                     text-sm text-zinc-700 hover:bg-zinc-50"
         >
-          <span className="text-base">f</span>
+          <span className="text-base font-semibold">f</span>
           Sign Up With Facebook
         </button>
       </div>
@@ -33,13 +39,13 @@ export default function RegisterPage() {
       {/* OR divider */}
       <div className="my-8 flex w-full items-center gap-4">
         <div className="h-px flex-1 bg-zinc-200" />
-        <div className="text-xs font-medium text-zinc-400">— OR —</div>
+        <span className="text-xs text-zinc-400">— OR —</span>
         <div className="h-px flex-1 bg-zinc-200" />
       </div>
 
       {/* Form */}
       <form className="w-full">
-        {/* Full name */}
+        {/* Full Name */}
         <div className="relative">
           <span className="absolute left-0 top-1/2 -translate-y-1/2 text-zinc-400">
             👤
@@ -47,7 +53,10 @@ export default function RegisterPage() {
           <input
             type="text"
             placeholder="Full Name"
-            className="w-full border-b border-zinc-200 py-3 pl-7 pr-2 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400"
+            className="w-full border-b border-zinc-300 py-3 pl-7 pr-2
+                       bg-transparent text-sm text-zinc-900
+                       placeholder:text-zinc-400 outline-none
+                       focus:border-zinc-500"
           />
         </div>
 
@@ -59,7 +68,10 @@ export default function RegisterPage() {
           <input
             type="email"
             placeholder="Email Address"
-            className="w-full border-b border-zinc-200 py-3 pl-7 pr-2 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400"
+            className="w-full border-b border-zinc-300 py-3 pl-7 pr-2
+                       bg-transparent text-sm text-zinc-900
+                       placeholder:text-zinc-400 outline-none
+                       focus:border-zinc-500"
           />
         </div>
 
@@ -71,12 +83,16 @@ export default function RegisterPage() {
           <input
             type={showPassword ? "text" : "password"}
             placeholder="Password"
-            className="w-full border-b border-zinc-200 py-3 pl-7 pr-10 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400"
+            className="w-full border-b border-zinc-300 py-3 pl-7 pr-10
+                       bg-transparent text-sm text-zinc-900
+                       placeholder:text-zinc-400 outline-none
+                       focus:border-zinc-500"
           />
           <button
             type="button"
-            onClick={() => setShowPassword((s) => !s)}
-            className="absolute right-0 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute right-0 top-1/2 -translate-y-1/2
+                       text-zinc-400 hover:text-zinc-600"
             aria-label="Toggle password visibility"
           >
             {showPassword ? "🙈" : "👁"}
@@ -86,13 +102,15 @@ export default function RegisterPage() {
         {/* Submit */}
         <button
           type="button"
-          className="mt-8 w-full rounded-md bg-[#d4002a] py-3 text-sm font-semibold text-white hover:bg-[#b70024]"
+          className="mt-8 w-full rounded-md bg-[#d4002a]
+                     py-3 text-sm font-semibold text-white
+                     hover:bg-[#b70024]"
         >
           Create Account
         </button>
       </form>
 
-      {/* Footer link */}
+      {/* Footer */}
       <div className="mt-6 text-sm text-zinc-500">
         Already have an account?{" "}
         <Link href="/login" className="text-sky-600 hover:underline">

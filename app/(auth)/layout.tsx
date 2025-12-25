@@ -5,7 +5,7 @@ import Link from "next/link";
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen w-full bg-zinc-100">
-      <div className="mx-auto grid min-h-screen w-full max-w-[1200px] grid-cols-1 md:grid-cols-2">
+      <div className="grid min-h-screen w-full grid-cols-1 md:grid-cols-2">
         {/* Left panel */}
         <div className="relative hidden items-center justify-center bg-[#b8dfe2] md:flex">
           <div className="flex flex-col items-center gap-4">
