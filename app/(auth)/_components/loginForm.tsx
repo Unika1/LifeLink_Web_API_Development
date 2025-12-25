@@ -39,7 +39,7 @@ export default function LoginForm() {
     const savedPassword = (user.password || "").trim();
 
     if (inputEmail === savedEmail && inputPassword === savedPassword) {
-      router.push("/auth/dashboard");
+      router.push("/dashboard");
     } else {
       alert("Invalid email or password");
     }
