@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -23,7 +22,6 @@ export default function LoginForm() {
   });
 
   const onSubmit = (values: LoginFormValues) => {
-    // Mock login against localStorage user (Sprint 1 friendly)
     const savedUserRaw = localStorage.getItem("mock_user");
     if (!savedUserRaw) {
       alert("No user found. Please register first.");

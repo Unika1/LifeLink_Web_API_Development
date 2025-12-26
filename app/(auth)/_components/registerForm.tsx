@@ -23,7 +23,6 @@ export default function RegisterForm() {
   });
 
   const onSubmit = (values: RegisterFormValues) => {
-    // Mock register (Sprint 1 friendly)
     localStorage.setItem("mock_user", JSON.stringify(values));
     alert("Registration successful. Please login.");
     router.push("/login");
