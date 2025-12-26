@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -16,88 +15,110 @@ export default function RegisterForm() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { fullName: "", email: "", password: "" },
+    defaultValues: {
+      fullName: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
   });
 
   const onSubmit = (values: RegisterFormValues) => {
-    localStorage.setItem("mock_user", JSON.stringify(values));
-    alert("Registration successful. Please login.");
+    const { confirmPassword, ...userToSave } = values;
+    localStorage.setItem("mock_user", JSON.stringify(userToSave));
     router.push("/login");
   };
 
   return (
-    <div className="flex w-full max-w-md flex-col text-zinc-900">
-      <h1 className="mb-8 text-center text-2xl font-semibold">Create Account</h1>
+    <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-md">
+      <h1 className="mb-2 text-center text-2xl font-semibold text-zinc-900">
+        Create Account
+      </h1>
+      <p className="mb-8 text-center text-sm text-zinc-500">
+        Create your account to continue
+      </p>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="w-full">
-        {/* Full Name */}
-        <div className="mb-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <div>
           <input
             type="text"
-            placeholder="Full Name"
-            className="w-full border-b border-zinc-300 bg-transparent py-3 text-sm
-                       text-zinc-900 placeholder:text-zinc-400 outline-none focus:border-zinc-500"
+            placeholder="Full name"
             {...register("fullName")}
+            className="w-full rounded-md border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 outline-none focus:border-red-500"
           />
           {errors.fullName && (
             <p className="mt-1 text-xs text-red-600">{errors.fullName.message}</p>
           )}
         </div>
 
-        {/* Email */}
-        <div className="mb-6">
+        <div>
           <input
             type="email"
-            placeholder="Email Address"
-            className="w-full border-b border-zinc-300 bg-transparent py-3 text-sm
-                       text-zinc-900 placeholder:text-zinc-400 outline-none focus:border-zinc-500"
+            placeholder="Email address"
             {...register("email")}
+            className="w-full rounded-md border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 outline-none focus:border-red-500"
           />
           {errors.email && (
             <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
           )}
         </div>
 
-        {/* Password */}
         <div className="relative">
           <input
             type={showPassword ? "text" : "password"}
             placeholder="Password"
-            className="w-full border-b border-zinc-300 bg-transparent py-3 pr-10 text-sm
-                       text-zinc-900 placeholder:text-zinc-400 outline-none focus:border-zinc-500"
             {...register("password")}
+            className="w-full rounded-md border border-zinc-300 bg-white px-4 py-3 pr-10 text-sm text-zinc-900 outline-none focus:border-red-500"
           />
           <button
             type="button"
             onClick={() => setShowPassword((s) => !s)}
-            className="absolute right-0 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
             aria-label="Toggle password visibility"
           >
-            {showPassword ? "🙈" : "👁"}
+            👁
           </button>
-
           {errors.password && (
             <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>
           )}
         </div>
 
-        {/* Submit */}
+        <div>
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Confirm Password"
+            {...register("confirmPassword")}
+            className="w-full rounded-md border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 outline-none focus:border-red-500"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((s) => !s)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+            aria-label="Toggle password visibility"
+          >
+            👁
+          </button>
+          {errors.confirmPassword && (
+            <p className="mt-1 text-xs text-red-600">
+              {errors.confirmPassword.message}
+            </p>
+          )}
+        </div>
+
         <button
           type="submit"
-          disabled={isSubmitting}
-          className="mt-8 w-full rounded-md bg-red-600 py-3 text-sm font-semibold text-white
-                     hover:bg-red-700 disabled:opacity-60"
+          className="w-full rounded-md bg-red-600 py-3 text-sm font-semibold text-white hover:bg-red-700"
         >
-          {isSubmitting ? "Creating..." : "Create Account"}
+          Create Account
         </button>
       </form>
 
       <p className="mt-6 text-center text-sm text-zinc-500">
         Already have an account?{" "}
-        <Link href="/login" className="text-sky-600 hover:underline">
+        <Link href="/login" className="text-red-600 hover:underline">
           Log in
         </Link>
       </p>
