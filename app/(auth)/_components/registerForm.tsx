@@ -50,7 +50,9 @@ export default function RegisterForm() {
             className="w-full rounded-md border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 outline-none focus:border-red-500"
           />
           {errors.fullName && (
-            <p className="mt-1 text-xs text-red-600">{errors.fullName.message}</p>
+            <p className="mt-1 text-xs text-red-600">
+              {errors.fullName.message}
+            </p>
           )}
         </div>
 
@@ -66,6 +68,7 @@ export default function RegisterForm() {
           )}
         </div>
 
+        {/* Password */}
         <div className="relative">
           <input
             type={showPassword ? "text" : "password"}
@@ -82,16 +85,19 @@ export default function RegisterForm() {
             👁
           </button>
           {errors.password && (
-            <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>
+            <p className="mt-1 text-xs text-red-600">
+              {errors.password.message}
+            </p>
           )}
         </div>
 
-        <div>
+        {/* Confirm Password */}
+        <div className="relative">
           <input
             type={showPassword ? "text" : "password"}
             placeholder="Confirm Password"
             {...register("confirmPassword")}
-            className="w-full rounded-md border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 outline-none focus:border-red-500"
+            className="w-full rounded-md border border-zinc-300 bg-white px-4 py-3 pr-10 text-sm text-zinc-900 outline-none focus:border-red-500"
           />
           <button
             type="button"

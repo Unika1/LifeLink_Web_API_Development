@@ -73,9 +73,6 @@ export default function HomePage() {
           <div className="flex items-center justify-center">
             <div className="w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
               <div className="rounded-xl bg-zinc-50 p-5">
-                <p className="text-xs font-semibold text-zinc-500">
-                  Preview (UI concept)
-                </p>
                 <p className="mt-2 text-lg font-semibold">
                   Your profile snapshot
                 </p>
@@ -131,19 +128,19 @@ export default function HomePage() {
           <h2 className="text-2xl font-semibold">Why LifeLink?</h2>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {[
             {
-              title: "Simple onboarding",
-              desc: "Register and sign in with a smooth, minimal interface.",
+              title: "Health information, when it matters",
+              desc: "LifeLink helps users keep important health details organised and accessible, especially in situations where quick access can make a real difference."
             },
             {
-              title: "Validation built-in",
-              desc: "Zod rules keep inputs clean and consistent.",
+              title: "Designed for clarity and ease",
+              desc: "The platform focuses on a clean and simple experience so users can register, sign in, and navigate without confusion or unnecessary steps.",
             },
             {
-              title: "Dashboard ready",
-              desc: "After login, redirect to a dummy dashboard route.",
+              title: "Scalable authentication flow",
+              desc: "LifeLink implements a complete authentication journey—from registration to dashboard access—designed to evolve into a secure, role-based system in later development phases.",
             },
           ].map((f) => (
             <div
@@ -188,12 +185,6 @@ export default function HomePage() {
             >
               Start now
             </Link>
-            <Link
-              href="/auth/dashboard"
-              className="rounded-md border border-zinc-300 bg-white px-6 py-3 text-sm font-semibold text-zinc-800 hover:bg-zinc-100"
-            >
-              View dashboard (dummy)
-            </Link>
           </div>
         </div>
       </section>
@@ -202,7 +193,7 @@ export default function HomePage() {
       <footer className="border-t border-zinc-200 bg-zinc-50">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-10 md:flex-row md:items-center md:justify-between">
           <p className="text-sm text-zinc-500">
-            © {new Date().getFullYear()} LifeLink — Sprint 1 UI demo
+            © {new Date().getFullYear()} LifeLink
           </p>
           <div className="flex gap-4 text-sm">
             <Link href="/login" className="text-zinc-600 hover:text-zinc-900">
