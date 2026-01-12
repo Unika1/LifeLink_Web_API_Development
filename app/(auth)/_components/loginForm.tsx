@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
 import { loginSchema, type LoginFormValues } from "../schema";
 
 export default function LoginForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState("");
 
   const {
     register,
@@ -21,66 +21,72 @@ export default function LoginForm() {
   });
 
   const onSubmit = (values: LoginFormValues) => {
-    const raw = localStorage.getItem("mock_user");
-    if (!raw) {
-      alert("Please register first");
-      router.push("/register");
+    const savedUser = localStorage.getItem("mock_user");
+
+    if (!savedUser) {
+      setLoginError("No account found. Please register first.");
       return;
     }
 
-    const user = JSON.parse(raw);
-    if (
-      values.email.trim().toLowerCase() === user.email.toLowerCase() &&
-      values.password === user.password
-    ) {
-      router.push("/auth/dashboard");
-    } else {
-      alert("Invalid credentials");
+    const user = JSON.parse(savedUser);
+
+    if (values.email !== user.email || values.password !== user.password) {
+      setLoginError("Invalid email or password");
+      return;
     }
+
+    setLoginError("");
+    router.push("/auth/dashboard");
   };
 
   return (
     <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-md">
       <h1 className="mb-2 text-center text-2xl font-semibold text-zinc-900">
-        Sign In
+        Login
       </h1>
-      <p className="mb-8 text-center text-sm text-zinc-500">
+      <p className="mb-6 text-center text-sm text-zinc-500">
         Welcome back, please login
       </p>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* Email */}
         <div>
-          <input
-            type="email"
-            placeholder="Email address"
-            {...register("email")}
-            className="w-full rounded-md border border-zinc-300 px-4 py-3
-                       text-sm text-zinc-900 outline-none
-                       focus:border-red-500"
-          />
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">
+              ✉️
+            </span>
+            <input
+              type="email"
+              placeholder="Email address"
+              {...register("email")}
+              className="w-full rounded-md border border-zinc-300 py-3 pl-10 pr-3 text-sm text-zinc-900 outline-none focus:border-red-500"
+            />
+          </div>
           {errors.email && (
-            <p className="mt-1 text-xs text-red-600">
-              {errors.email.message}
-            </p>
+            <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
           )}
         </div>
 
-        <div className="relative">
-          <input
-            type={showPassword ? "text" : "password"}
-            placeholder="Password"
-            {...register("password")}
-            className="w-full rounded-md border border-zinc-300 px-4 py-3
-                       text-sm text-zinc-900 outline-none
-                       focus:border-red-500"
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400"
-          >
-            👁
-          </button>
+        {/* Password */}
+        <div>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">
+              🔒
+            </span>
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              {...register("password")}
+              className="w-full rounded-md border border-zinc-300 py-3 pl-10 pr-10 text-sm text-zinc-900 outline-none focus:border-red-500"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((s) => !s)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400"
+            >
+              👁
+            </button>
+          </div>
           {errors.password && (
             <p className="mt-1 text-xs text-red-600">
               {errors.password.message}
@@ -88,10 +94,14 @@ export default function LoginForm() {
           )}
         </div>
 
+        {/* Login error (wrong password / no account) */}
+        {loginError && (
+          <p className="text-center text-sm text-red-600">{loginError}</p>
+        )}
+
         <button
           type="submit"
-          className="w-full rounded-md bg-red-600 py-3
-                     text-sm font-semibold text-white hover:bg-red-700"
+          className="w-full rounded-md bg-red-600 py-3 text-sm font-semibold text-white hover:bg-red-700"
         >
           Sign In
         </button>
