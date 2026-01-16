@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { loginSchema, type LoginFormValues } from "../schema";
+import { loginSchema, type LoginData } from "../schema";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -16,11 +16,11 @@ export default function LoginForm() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormValues>({
+  } = useForm<LoginData>({
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = (values: LoginFormValues) => {
+  const onSubmit = (values: LoginData) => {
     const savedUser = localStorage.getItem("mock_user");
 
     if (!savedUser) {

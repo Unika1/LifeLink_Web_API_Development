@@ -5,7 +5,7 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-export type LoginFormValues = z.infer<typeof loginSchema>;
+export type LoginData = z.infer<typeof loginSchema>;
 
 export const registerSchema = z
   .object({
@@ -20,4 +20,4 @@ export const registerSchema = z
     path: ["confirmPassword"],
   });
 
-export type RegisterFormValues = z.infer<typeof registerSchema>;
+export type RegisterData = z.infer<typeof registerSchema>;
