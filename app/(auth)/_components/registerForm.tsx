@@ -6,7 +6,9 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { registerSchema, type RegisterFormValues } from "../schema";
+import { registerSchema, type RegisterData } from "../schema";
+import { handleRegister } from "@/lib/actions/auth-actions";
+
 
 function FieldIcon({ children }: { children: React.ReactNode }) {
   return (
@@ -25,7 +27,7 @@ export default function RegisterForm() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<RegisterFormValues>({
+  } = useForm<RegisterData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       firstName: "",
@@ -36,9 +38,14 @@ export default function RegisterForm() {
     },
   });
 
-  const onSubmit = (values: RegisterFormValues) => {
-    const { confirmPassword, ...userToSave } = values;
-    localStorage.setItem("mock_user", JSON.stringify(userToSave));
+  const onSubmit = async (values: RegisterData) => {
+    const res = await handleRegister(values);
+
+    if (!res.success) {
+      alert(res.message || "Registration failed");
+      return;
+    }
+
     router.push("/login");
   };
 
@@ -58,7 +65,6 @@ export default function RegisterForm() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {/* First + Last name */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <div className="relative">
@@ -95,7 +101,6 @@ export default function RegisterForm() {
           </div>
         </div>
 
-        {/* Email */}
         <div>
           <div className="relative">
             <FieldIcon>✉️</FieldIcon>
@@ -111,7 +116,6 @@ export default function RegisterForm() {
           )}
         </div>
 
-        {/* Password */}
         <div>
           <div className="relative">
             <FieldIcon>🔒</FieldIcon>
@@ -135,7 +139,6 @@ export default function RegisterForm() {
           )}
         </div>
 
-        {/* Confirm Password */}
         <div>
           <div className="relative">
             <FieldIcon>🔑</FieldIcon>
@@ -171,10 +174,7 @@ export default function RegisterForm() {
 
       <p className="mt-6 text-center text-sm text-zinc-500">
         Already have an account?{" "}
-        <Link
-          href="/login"
-          className="font-semibold text-[#d4002a] hover:underline"
-        >
+        <Link href="/login" className="font-semibold text-[#d4002a] hover:underline">
           Log in
         </Link>
       </p>

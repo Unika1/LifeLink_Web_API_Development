@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginData } from "../schema";
+import { handleLogin } from "@/lib/actions/auth-actions";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -20,24 +21,19 @@ export default function LoginForm() {
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = (values: LoginData) => {
-    const savedUser = localStorage.getItem("mock_user");
+  const onSubmit = async (values: LoginData) => {
+  setLoginError("");
 
-    if (!savedUser) {
-      setLoginError("No account found. Please register first.");
-      return;
-    }
+  const res = await handleLogin(values);
 
-    const user = JSON.parse(savedUser);
+  if (!res.success) {
+    setLoginError(res.message || "Invalid email or password");
+    return;
+  }
 
-    if (values.email !== user.email || values.password !== user.password) {
-      setLoginError("Invalid email or password");
-      return;
-    }
+  router.push("/auth/dashboard");
+};
 
-    setLoginError("");
-    router.push("/auth/dashboard");
-  };
 
   return (
     <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-md">
