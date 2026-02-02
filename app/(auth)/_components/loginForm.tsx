@@ -22,17 +22,22 @@ export default function LoginForm() {
   });
 
   const onSubmit = async (values: LoginData) => {
-  setLoginError("");
+    setLoginError("");
 
-  const res = await handleLogin(values);
+    const res = await handleLogin(values);
 
-  if (!res.success) {
-    setLoginError(res.message || "Invalid email or password");
-    return;
-  }
+    if (!res.success) {
+      setLoginError(res.message || "Invalid email or password");
+      return;
+    }
 
-  router.push("/auth/dashboard");
-};
+    // Redirect based on user role
+    if (res.data?.role === "admin") {
+      router.push("/admin");
+    } else {
+      router.push("/dashboard");
+    }
+  };
 
 
   return (

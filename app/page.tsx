@@ -35,7 +35,7 @@ export default function HomePage() {
 
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 -z-10">
+        <div className="pointer-events-none absolute inset-0 -z-10">
           <div className="absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-[#b8dfe2] blur-3xl opacity-70" />
           <div className="absolute -bottom-28 right-16 h-72 w-72 rounded-full bg-red-200 blur-3xl opacity-40" />
         </div>
@@ -154,38 +154,6 @@ export default function HomePage() {
               <p className="mt-2 text-sm text-zinc-600">{f.desc}</p>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="border-t border-zinc-200 bg-white">
-        <div className="mx-auto max-w-6xl px-6 py-14">
-          <h2 className="text-2xl font-semibold">How it works</h2>
-          <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-3">
-            {[
-              { step: "01", title: "Create an account", desc: "Sign up in under a minute." },
-              { step: "02", title: "Login securely", desc: "Validated form inputs with clear errors." },
-              { step: "03", title: "Go to dashboard", desc: "Redirect to /auth/dashboard after login." },
-            ].map((s) => (
-              <div
-                key={s.step}
-                className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6"
-              >
-                <p className="text-sm font-semibold text-[#d4002a]">{s.step}</p>
-                <h3 className="mt-2 text-base font-semibold">{s.title}</h3>
-                <p className="mt-2 text-sm text-zinc-600">{s.desc}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-10 flex flex-wrap gap-3">
-            <Link
-              href="/register"
-              className="rounded-md bg-[#d4002a] px-6 py-3 text-sm font-semibold text-white hover:bg-[#b70024]"
-            >
-              Start now
-            </Link>
-          </div>
         </div>
       </section>
 
