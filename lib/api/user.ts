@@ -2,11 +2,7 @@ import axios from "./axios";
 
 export const createUser = async (formData: FormData) => {
   try {
-    const response = await axios.post("/api/auth/user", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const response = await axios.post("/api/auth/user", formData);
     return response.data;
   } catch (error: any) {
     throw new Error(
@@ -84,11 +80,7 @@ export const adminGetUserById = async (id: string) => {
 
 export const adminCreateUser = async (formData: FormData) => {
   try {
-    const response = await axios.post("/api/admin/users", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const response = await axios.post("/api/admin/users", formData);
     return response.data;
   } catch (error: any) {
     throw new Error(
@@ -99,11 +91,7 @@ export const adminCreateUser = async (formData: FormData) => {
 
 export const adminUpdateUser = async (id: string, formData: FormData) => {
   try {
-    const response = await axios.put(`/api/admin/users/${id}`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const response = await axios.put(`/api/admin/users/${id}`, formData);
     return response.data;
   } catch (error: any) {
     throw new Error(
@@ -125,11 +113,7 @@ export const adminDeleteUser = async (id: string) => {
 
 export const updateUserProfile = async (id: string, formData: FormData) => {
   try {
-    const response = await axios.put(`/api/auth/${id}`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const response = await axios.put(`/api/auth/${id}`, formData);
     return response.data;
   } catch (error: any) {
     throw new Error(
