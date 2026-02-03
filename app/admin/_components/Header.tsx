@@ -6,11 +6,24 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white">
       <div className="flex items-center justify-between px-6 py-4">
-        <div>
-          <h1 className="text-lg font-semibold text-zinc-900">
-            Hospital Admin
-          </h1>
-          <p className="text-xs text-zinc-500">Manage blood requests, donors, inventory & staff</p>
+        <div className="flex items-center gap-6">
+          <div>
+            <h1 className="text-lg font-semibold text-zinc-900">Hospital Admin</h1>
+            <p className="text-xs text-zinc-500">
+              Manage hospital requests, donors, inventory & staff
+            </p>
+          </div>
+
+          <div className="hidden items-center md:flex">
+            <div className="flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-2">
+              <span className="text-xs text-zinc-400">🔍</span>
+              <input
+                type="search"
+                placeholder="Search"
+                className="w-48 bg-transparent text-sm text-zinc-700 placeholder:text-zinc-400 focus:outline-none"
+              />
+            </div>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">

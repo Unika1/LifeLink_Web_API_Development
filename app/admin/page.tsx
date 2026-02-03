@@ -1,7 +1,3 @@
-"use client";
-
-import { useState } from "react";
-
 function Card({
   children,
   className = "",
@@ -24,73 +20,155 @@ function Card({
 function StatCard({
   label,
   value,
-  icon,
   color,
 }: {
   label: string;
   value: string | number;
-  icon: string;
   color: string;
 }) {
   return (
-    <Card>
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-zinc-600">{label}</p>
-          <p className="mt-2 text-3xl font-bold text-zinc-900">{value}</p>
-        </div>
-        <div className={`rounded-lg p-3 text-2xl ${color}`}>{icon}</div>
-      </div>
-    </Card>
+    <div className={`rounded-2xl p-5 text-white ${color}`}>
+      <p className="text-sm/relaxed opacity-90">{label}</p>
+      <p className="mt-2 text-2xl font-semibold">{value}</p>
+    </div>
   );
 }
 
 export default function AdminDashboard() {
-  // TODO: Fetch data from backend API
-  // const { data: stats } = useQuery('/api/admin/stats');
-  // const { data: bloodInventory } = useQuery('/api/admin/blood-inventory');
-  // const { data: recentRequests } = useQuery('/api/admin/requests');
+  const stats = [
+    { label: "Total Requests", value: "21", color: "bg-[#3b82f6]" },
+    { label: "Approved Requests", value: "5,834", color: "bg-[#60d5c8]" },
+    { label: "Pending Requests", value: "5,834", color: "bg-[#9cf04e]" },
+  ];
+
+  const bloodGroups = [
+    { label: "A+", value: 32, color: "bg-[#f17d59]" },
+    { label: "O+", value: 24, color: "bg-[#3b82f6]" },
+    { label: "B+", value: 38, color: "bg-[#f59e0b]" },
+    { label: "AB-", value: 28, color: "bg-[#64748b]" },
+    { label: "AB+", value: 34, color: "bg-[#22c55e]" },
+  ];
+
+  const alerts = [
+    "Blood stock low: O+",
+    "Pending request approvals",
+  ];
+
+  const recentRequests = [
+    {
+      id: "R056",
+      person: "Ram",
+      bloodGroup: "A+",
+      status: "Approved",
+      time: "1:00 PM",
+    },
+    {
+      id: "R056",
+      person: "Hari",
+      bloodGroup: "A+",
+      status: "Pending",
+      time: "1:00 PM",
+    },
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Dashboard Header */}
-      <div className="border-b border-zinc-200 pb-4">
-        <h2 className="text-3xl font-bold text-zinc-900">Admin Dashboard</h2>
-        <p className="mt-1 text-sm text-zinc-600">Blood Bank & Donation Management System</p>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-semibold text-zinc-900">Hospital Dashboard</h2>
       </div>
 
-      {/* Placeholder - Connect to Backend */}
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {stats.map((stat) => (
+          <StatCard
+            key={stat.label + stat.color}
+            label={stat.label}
+            value={stat.value}
+            color={stat.color}
+          />
+        ))}
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <Card>
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-zinc-900">
+              Requests by Blood Group
+            </h3>
+          </div>
+          <div className="flex h-48 items-end justify-between gap-4">
+            {bloodGroups.map((group) => (
+              <div key={group.label} className="flex flex-1 flex-col items-center">
+                <div
+                  className={`w-full rounded-md ${group.color}`}
+                  style={{ height: `${group.value * 2.2}px` }}
+                />
+                <span className="mt-3 text-xs font-medium text-zinc-500">
+                  {group.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card>
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-zinc-900">System Alerts</h3>
+          </div>
+          <div className="space-y-3">
+            {alerts.map((alert) => (
+              <div
+                key={alert}
+                className="rounded-lg bg-zinc-100 px-4 py-3 text-sm text-zinc-700"
+              >
+                {alert}
+              </div>
+            ))}
+          </div>
+        </Card>
+      </section>
+
       <Card>
-        <div className="py-16 text-center">
-          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-blue-50">
-            <span className="text-4xl">🔌</span>
-          </div>
-          <h3 className="text-xl font-semibold text-zinc-900">Connect to Backend API</h3>
-          <p className="mt-2 text-sm text-zinc-600">
-            This admin dashboard is ready to display data from your backend.
-          </p>
-          <p className="mt-1 text-xs text-zinc-500">
-            Configure API endpoints for: Stats, Blood Inventory, Requests, Donors, and Alerts
-          </p>
-          
-          <div className="mt-8 grid grid-cols-1 gap-3 text-left max-w-md mx-auto">
-            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-              <p className="text-xs font-mono text-zinc-700">GET /api/admin/stats</p>
-              <p className="mt-1 text-xs text-zinc-500">Dashboard statistics</p>
-            </div>
-            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-              <p className="text-xs font-mono text-zinc-700">GET /api/admin/blood-inventory</p>
-              <p className="mt-1 text-xs text-zinc-500">Blood stock by type</p>
-            </div>
-            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-              <p className="text-xs font-mono text-zinc-700">GET /api/admin/requests</p>
-              <p className="mt-1 text-xs text-zinc-500">Recent blood requests</p>
-            </div>
-            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-              <p className="text-xs font-mono text-zinc-700">GET /api/admin/donors</p>
-              <p className="mt-1 text-xs text-zinc-500">Active donor list</p>
-            </div>
-          </div>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-zinc-900">Recent Requests</h3>
+        </div>
+        <div className="overflow-hidden rounded-xl border border-zinc-100">
+          <table className="w-full text-sm">
+            <thead className="bg-zinc-50 text-left text-xs uppercase text-zinc-500">
+              <tr>
+                <th className="px-4 py-3 font-medium">ID</th>
+                <th className="px-4 py-3 font-medium">People</th>
+                <th className="px-4 py-3 font-medium">Blood Group</th>
+                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Time</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100">
+              {recentRequests.map((request) => (
+                <tr key={`${request.id}-${request.status}`}>
+                  <td className="px-4 py-3 text-zinc-700">{request.id}</td>
+                  <td className="px-4 py-3 text-zinc-700">
+                    {request.person}
+                  </td>
+                  <td className="px-4 py-3 text-zinc-700">
+                    {request.bloodGroup}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={[
+                        "rounded-full px-3 py-1 text-xs font-medium",
+                        request.status === "Approved"
+                          ? "bg-emerald-50 text-emerald-600"
+                          : "bg-orange-50 text-orange-600",
+                      ].join(" ")}
+                    >
+                      {request.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-zinc-500">{request.time}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </Card>
     </div>

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { getUserData } from "@/lib/cookie";
+import { updateUserProfile } from "@/lib/api/user";
+import Cookies from "js-cookie";
 
 interface UserData {
   _id: string;
@@ -11,6 +13,7 @@ interface UserData {
   username?: string;
   phone?: string;
   bio?: string;
+  imageUrl?: string;
   role: string;
   createdAt: string;
   [key: string]: any;
@@ -20,8 +23,9 @@ export default function AdminProfile() {
   const [user, setUser] = useState<UserData | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageError, setImageError] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -32,18 +36,34 @@ export default function AdminProfile() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const apiBaseUrl =
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5050";
+
   useEffect(() => {
     const loadUser = async () => {
       try {
         const userData = await getUserData();
+        const cookieUser = Cookies.get("lifelink_user");
+        const parsedCookieUser = cookieUser ? JSON.parse(cookieUser) : null;
         if (userData) {
           setUser(userData as UserData);
+          setImageError(false);
           setFormData({
             firstName: userData.firstName || "",
             lastName: userData.lastName || "",
             email: userData.email || "",
             phone: userData.phone || "",
             bio: userData.bio || "",
+          });
+        } else if (parsedCookieUser) {
+          setUser(parsedCookieUser as UserData);
+          setImageError(false);
+          setFormData({
+            firstName: parsedCookieUser.firstName || "",
+            lastName: parsedCookieUser.lastName || "",
+            email: parsedCookieUser.email || "",
+            phone: parsedCookieUser.phone || "",
+            bio: parsedCookieUser.bio || "",
           });
         }
       } catch (err) {
@@ -70,9 +90,10 @@ export default function AdminProfile() {
     const file = e.target.files?.[0];
     if (file) {
       setImageFile(file);
+      setImageError(false);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProfileImage(reader.result as string);
+        setPreviewImage(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -84,22 +105,44 @@ export default function AdminProfile() {
     setSuccess("");
 
     try {
-      // TODO: Implement backend API call
-      // const response = await fetch(`/api/admin/profile/${user?._id}`, {
-      //   method: "PUT",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //   },
-      //   body: JSON.stringify(formData),
-      // });
+      if (!user?._id) {
+        throw new Error("User ID not found");
+      }
+
+      const payload = new FormData();
+      payload.append("firstName", formData.firstName);
+      payload.append("lastName", formData.lastName);
+      payload.append("email", formData.email);
+      if (formData.phone) payload.append("phone", formData.phone);
+      if (formData.bio) payload.append("bio", formData.bio);
+      if (imageFile) payload.append("image", imageFile);
+
+      const response = await updateUserProfile(user._id, payload);
+      const updated = response?.data?.data || response?.data || response;
 
       setSuccess("Profile updated successfully!");
       setIsEditing(false);
+      setImageError(false);
+      if (updated?.imageUrl) {
+        setPreviewImage(null);
+      }
 
       // Update local user data
+      const mergedUser = {
+        ...(user || {}),
+        ...formData,
+        imageUrl: updated?.imageUrl ?? user?.imageUrl,
+      };
+
       setUser((prev) =>
-        prev ? { ...prev, ...formData } : null
+        prev
+          ? {
+              ...prev,
+              ...mergedUser,
+            }
+          : prev
       );
+      Cookies.set("lifelink_user", JSON.stringify(mergedUser));
 
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
@@ -138,31 +181,41 @@ export default function AdminProfile() {
           </div>
         )}
 
+
         {/* Profile Info */}
         <div className="mb-8 flex items-start gap-6">
           <div className="relative">
-            {profileImage || user?.profileImage ? (
+            {previewImage ? (
               <img
-                src={profileImage || user?.profileImage}
+                src={previewImage}
+                alt="Profile Preview"
+                className="h-24 w-24 rounded-full object-cover ring-2 ring-zinc-200"
+                onError={() => setImageError(true)}
+              />
+            ) : user?.imageUrl && !imageError ? (
+              <img
+                src={`${apiBaseUrl}${user.imageUrl}`}
                 alt="Profile"
                 className="h-24 w-24 rounded-full object-cover ring-2 ring-zinc-200"
+                onError={() => setImageError(true)}
               />
             ) : (
               <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[#d4002a] to-[#ff6b9d] text-4xl text-white">
                 {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
               </div>
             )}
-            {isEditing && (
-              <label className="absolute -bottom-1 -right-1 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#d4002a] text-white hover:bg-[#b8002a] transition shadow-lg">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden"
-                />
-                <span className="text-lg">📷</span>
-              </label>
-            )}
+            <label className="absolute -bottom-1 -right-1 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#d4002a] text-white hover:bg-[#b8002a] transition shadow-lg">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  setIsEditing(true);
+                  handleImageChange(e);
+                }}
+                className="hidden"
+              />
+              <span className="text-lg">📷</span>
+            </label>
           </div>
           <div>
             <h2 className="text-2xl font-bold text-zinc-900">
@@ -259,7 +312,13 @@ export default function AdminProfile() {
             {!isEditing ? (
               <button
                 type="button"
-                onClick={() => setIsEditing(true)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setSuccess("");
+                  setError("");
+                  setIsEditing(true);
+                }}
                 className="flex-1 rounded-lg bg-[#d4002a] px-4 py-2 font-semibold text-white hover:bg-[#b8002a] transition"
               >
                 Edit Profile
