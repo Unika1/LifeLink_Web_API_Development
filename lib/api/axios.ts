@@ -14,6 +14,11 @@ const axiosInstance = axios.create({
 // Add request interceptor to include auth token
 axiosInstance.interceptors.request.use(
   (config) => {
+    if (config.data instanceof FormData) {
+      if (config.headers) {
+        delete config.headers["Content-Type"];
+      }
+    }
     const token = Cookies.get("lifelink_token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
