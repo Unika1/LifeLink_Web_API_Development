@@ -1,3 +1,17 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { adminGetUsers } from "@/lib/api/user";
+
+interface User {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  createdAt: string;
+}
+
 function Card({
   children,
   className = "",
@@ -35,10 +49,31 @@ function StatCard({
 }
 
 export default function AdminDashboard() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    try {
+      setLoading(false);
+      const response = await adminGetUsers();
+      if (response.success) {
+        setUsers(response.data || []);
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to load users");
+      setLoading(false);
+    }
+  };
+
   const stats = [
-    { label: "Total Requests", value: "21", color: "bg-[#3b82f6]" },
-    { label: "Approved Requests", value: "5,834", color: "bg-[#60d5c8]" },
-    { label: "Pending Requests", value: "5,834", color: "bg-[#9cf04e]" },
+    { label: "Total Users", value: users.length, color: "bg-[#3b82f6]" },
+    { label: "Admin Users", value: users.filter((u) => u.role === "admin").length, color: "bg-[#60d5c8]" },
+    { label: "Regular Users", value: users.filter((u) => u.role === "user").length, color: "bg-[#9cf04e]" },
   ];
 
   const bloodGroups = [
@@ -54,22 +89,14 @@ export default function AdminDashboard() {
     "Pending request approvals",
   ];
 
-  const recentRequests = [
-    {
-      id: "R056",
-      person: "Ram",
-      bloodGroup: "A+",
-      status: "Approved",
-      time: "1:00 PM",
-    },
-    {
-      id: "R056",
-      person: "Hari",
-      bloodGroup: "A+",
-      status: "Pending",
-      time: "1:00 PM",
-    },
-  ];
+  const recentRequests = users.slice(0, 5).map((user, index) => ({
+    id: `U${String(index + 1).padStart(3, "0")}`,
+    person: `${user.firstName} ${user.lastName}`,
+    email: user.email,
+    role: user.role,
+    status: user.role === "admin" ? "Active" : "Pending",
+    time: new Date(user.createdAt).toLocaleString(),
+  }));
 
   return (
     <div className="space-y-6">
@@ -129,47 +156,59 @@ export default function AdminDashboard() {
 
       <Card>
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-zinc-900">Recent Requests</h3>
+          <h3 className="text-sm font-semibold text-zinc-900">Recent Users</h3>
         </div>
-        <div className="overflow-hidden rounded-xl border border-zinc-100">
-          <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-xs uppercase text-zinc-500">
-              <tr>
-                <th className="px-4 py-3 font-medium">ID</th>
-                <th className="px-4 py-3 font-medium">People</th>
-                <th className="px-4 py-3 font-medium">Blood Group</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Time</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {recentRequests.map((request) => (
-                <tr key={`${request.id}-${request.status}`}>
-                  <td className="px-4 py-3 text-zinc-700">{request.id}</td>
-                  <td className="px-4 py-3 text-zinc-700">
-                    {request.person}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-700">
-                    {request.bloodGroup}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={[
-                        "rounded-full px-3 py-1 text-xs font-medium",
-                        request.status === "Approved"
-                          ? "bg-emerald-50 text-emerald-600"
-                          : "bg-orange-50 text-orange-600",
-                      ].join(" ")}
-                    >
-                      {request.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-zinc-500">{request.time}</td>
+        {loading ? (
+          <div className="text-center text-zinc-600">Loading users...</div>
+        ) : error ? (
+          <div className="text-center text-red-600">{error}</div>
+        ) : users.length === 0 ? (
+          <div className="text-center text-zinc-600">No users found</div>
+        ) : (
+          <div className="overflow-hidden rounded-xl border border-zinc-100">
+            <table className="w-full text-sm">
+              <thead className="bg-zinc-50 text-left text-xs uppercase text-zinc-500">
+                <tr>
+                  <th className="px-4 py-3 font-medium">ID</th>
+                  <th className="px-4 py-3 font-medium">Name</th>
+                  <th className="px-4 py-3 font-medium">Email</th>
+                  <th className="px-4 py-3 font-medium">Role</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Joined</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-zinc-100">
+                {recentRequests.map((request) => (
+                  <tr key={request.id}>
+                    <td className="px-4 py-3 text-zinc-700">{request.id}</td>
+                    <td className="px-4 py-3 text-zinc-700">
+                      {request.person}
+                    </td>
+                    <td className="px-4 py-3 text-zinc-700">
+                      {request.email}
+                    </td>
+                    <td className="px-4 py-3 text-zinc-700 capitalize">
+                      {request.role}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={[
+                          "rounded-full px-3 py-1 text-xs font-medium",
+                          request.status === "Active"
+                            ? "bg-emerald-50 text-emerald-600"
+                            : "bg-orange-50 text-orange-600",
+                        ].join(" ")}
+                      >
+                        {request.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-zinc-500">{request.time}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
     </div>
   );

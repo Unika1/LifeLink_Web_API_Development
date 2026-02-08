@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -13,24 +13,36 @@ interface User {
   createdAt: string;
 }
 
+interface PaginationData {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterRole, setFilterRole] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [pagination, setPagination] = useState<PaginationData | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   useEffect(() => {
-    loadUsers();
-  }, []);
+    loadUsers(currentPage, pageSize);
+  }, [currentPage, pageSize]);
 
-  const loadUsers = async () => {
+  const loadUsers = async (page: number, limit: number) => {
     try {
       setLoading(true);
-      const response = await adminGetUsers();
+      setError("");
+      const response = await adminGetUsers(page, limit);
       if (response.success) {
         setUsers(response.data || []);
+        if (response.pagination) {
+          setPagination(response.pagination);
+        }
       }
     } catch (err: any) {
       setError(err.message || "Failed to load users");
@@ -44,21 +56,18 @@ export default function AdminUsersPage() {
       await adminDeleteUser(id);
       setUsers(users.filter((user) => user._id !== id));
       setDeleteConfirm(null);
+      // Reload to update pagination
+      loadUsers(currentPage, pageSize);
     } catch (err: any) {
       setError(err.message || "Failed to delete user");
     }
   };
 
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesRole = filterRole === "all" || user.role === filterRole;
-
-    return matchesSearch && matchesRole;
-  });
+  const goToPage = (page: number) => {
+    if (page >= 1 && (!pagination || page <= pagination.totalPages)) {
+      setCurrentPage(page);
+    }
+  };
 
   if (loading) {
     return (
@@ -74,7 +83,9 @@ export default function AdminUsersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-zinc-900">Users</h1>
-          <p className="mt-1 text-zinc-600">Manage hospital staff and system users</p>
+          <p className="mt-1 text-zinc-600">
+            {pagination ? `Showing ${users.length} of ${pagination.total} users` : "Manage hospital staff and system users"}
+          </p>
         </div>
         <Link
           href="/admin/users/create"
@@ -91,29 +102,24 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      {/* Filters */}
+      {/* Page Size Selector */}
       <div className="rounded-xl border border-zinc-200 bg-white p-4">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
-          <div className="flex-1">
-            <input
-              type="text"
-              placeholder="Search by name or email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-zinc-900 placeholder-zinc-500 focus:border-[#d4002a] focus:outline-none"
-            />
-          </div>
+        <label className="text-sm font-medium text-zinc-900">
+          Items per page:
           <select
-            value={filterRole}
-            onChange={(e) => setFilterRole(e.target.value)}
-            className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-zinc-900 focus:border-[#d4002a] focus:outline-none"
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            className="ml-3 rounded-lg border border-zinc-300 bg-white px-3 py-1 text-zinc-900 focus:border-[#d4002a] focus:outline-none"
           >
-            <option value="all">All Roles</option>
-            <option value="admin">Admin</option>
-            <option value="staff">Staff</option>
-            <option value="user">User</option>
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
           </select>
-        </div>
+        </label>
       </div>
 
       {/* Users Table */}
@@ -140,14 +146,14 @@ export default function AdminUsersPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.length === 0 ? (
+              {users.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-zinc-600">
                     No users found
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((user) => (
+                users.map((user) => (
                   <tr
                     key={user._id}
                     className="border-b border-zinc-100 hover:bg-zinc-50 transition"
@@ -161,7 +167,7 @@ export default function AdminUsersPage() {
                         className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
                           user.role === "admin"
                             ? "bg-purple-100 text-purple-700"
-                            : user.role === "staff"
+                            : user.role === "hospital"
                             ? "bg-blue-100 text-blue-700"
                             : "bg-gray-100 text-gray-700"
                         }`}
@@ -201,6 +207,69 @@ export default function AdminUsersPage() {
           </table>
         </div>
       </div>
+
+      {/* Pagination Controls */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="rounded-xl border border-zinc-200 bg-white p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-zinc-600">
+              Page {pagination.page} of {pagination.totalPages}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                ← Previous
+              </button>
+
+              {/* Page Numbers */}
+              <div className="flex gap-1">
+                {Array.from({ length: pagination.totalPages }, (_, i) => {
+                  const pageNum = i + 1;
+                  // Show first page, last page, current page, and neighbors
+                  const showPage =
+                    pageNum === 1 ||
+                    pageNum === pagination.totalPages ||
+                    Math.abs(pageNum - pagination.page) <= 1;
+
+                  if (!showPage && i > 0 && i < pagination.totalPages - 1) {
+                    if (i === 1) return <span key="dots1" className="px-2">...</span>;
+                    if (i === pagination.totalPages - 2) return <span key="dots2" className="px-2">...</span>;
+                    return null;
+                  }
+
+                  if (showPage) {
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => goToPage(pageNum)}
+                        className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                          pageNum === currentPage
+                            ? "bg-[#d4002a] text-white"
+                            : "border border-zinc-300 text-zinc-900 hover:bg-zinc-50"
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  }
+                  return null;
+                })}
+              </div>
+
+              <button
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === pagination.totalPages}
+                className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                Next →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
