@@ -210,7 +210,13 @@ export default function DashboardPage() {
                 <span className="text-sm font-semibold text-zinc-900">Request</span>
               </Link>
 
-              <Link href="/user/profile" className="flex flex-col items-center gap-3 rounded-xl p-4 hover:bg-zinc-50 transition">
+              <Link 
+                href="/user/profile" 
+                className="flex flex-col items-center gap-3 rounded-xl p-4 hover:bg-zinc-50 transition"
+                onClick={(e) => {
+                  console.log('Profile link clicked');
+                }}
+              >
                 <span className="text-3xl">👤</span>
                 <span className="text-sm font-semibold text-zinc-900">Profile</span>
               </Link>
