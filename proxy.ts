@@ -32,7 +32,7 @@ export function proxy(request: NextRequest) {
     if (isAdminRoute && user.role !== 'admin') {
       return NextResponse.redirect(new URL('/', request.url));
     }
-    if (isUserRoute && user.role !== 'user' && user.role !== 'admin') {
+    if (isUserRoute && user.role !== 'donor' && user.role !== 'hospital' && user.role !== 'admin') {
       return NextResponse.redirect(new URL('/', request.url));
     }
   }

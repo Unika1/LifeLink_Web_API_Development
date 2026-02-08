@@ -56,9 +56,13 @@ export const deleteUser = async (id: string) => {
 };
 
 // Admin API Functions
-export const adminGetUsers = async () => {
+export const adminGetUsers = async (page?: number, limit?: number) => {
   try {
-    const response = await axios.get("/api/admin/users");
+    let url = "/api/admin/users";
+    if (page !== undefined && limit !== undefined) {
+      url += `?page=${page}&limit=${limit}`;
+    }
+    const response = await axios.get(url);
     return response.data;
   } catch (error: any) {
     throw new Error(

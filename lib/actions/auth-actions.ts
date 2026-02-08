@@ -1,6 +1,11 @@
 "use server";
 
-import { login, register } from "@/lib/api/auth";
+import {
+  login,
+  register,
+  requestPasswordReset,
+  resetPassword,
+} from "@/lib/api/auth";
 import type { LoginData, RegisterData } from "@/app/(auth)/schema";
 import { setAuthToken, setUserData, clearAuthCookies } from "@/lib/cookie";
 import { redirect } from "next/navigation";
@@ -10,6 +15,10 @@ export const handleRegister = async (data: RegisterData) => {
     const response = await register(data);
 
     if (response.success) {
+      // Set auth token and user data after successful registration
+      await setAuthToken(response.token);
+      await setUserData(response.data);
+
       return {
         success: true,
         message: "Registration successful",
@@ -59,4 +68,53 @@ export const handleLogin = async (data: LoginData) => {
 export const handleLogout = async () => {
   await clearAuthCookies();
   return redirect("/login");
+};
+
+export const handleRequestPasswordReset = async (email: string) => {
+  try {
+    const response = await requestPasswordReset(email);
+
+    if (response.success) {
+      return {
+        success: true,
+        message: response.message || "Reset link sent",
+      };
+    }
+
+    return {
+      success: false,
+      message: response.message || "Reset request failed",
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.message || "Reset request failed",
+    };
+  }
+};
+
+export const handleResetPassword = async (
+  token: string,
+  newPassword: string
+) => {
+  try {
+    const response = await resetPassword(token, newPassword);
+
+    if (response.success) {
+      return {
+        success: true,
+        message: response.message || "Password reset successful",
+      };
+    }
+
+    return {
+      success: false,
+      message: response.message || "Reset failed",
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.message || "Reset failed",
+    };
+  }
 };
