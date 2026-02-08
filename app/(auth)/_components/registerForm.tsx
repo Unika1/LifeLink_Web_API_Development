@@ -35,6 +35,7 @@ export default function RegisterForm() {
       email: "",
       password: "",
       confirmPassword: "",
+      role: "donor",
     },
   });
 
@@ -113,6 +114,26 @@ export default function RegisterForm() {
           </div>
           {errors.email && (
             <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
+          )}
+        </div>
+
+        <div>
+          <div className="relative">
+            <FieldIcon>👤</FieldIcon>
+            <select
+              {...register("role")}
+              className="w-full rounded-xl border border-zinc-300 bg-white px-10 py-3 text-sm text-zinc-900 outline-none transition focus:border-[#d4002a] focus:ring-4 focus:ring-red-100 appearance-none cursor-pointer"
+            >
+              <option value="">Select your role</option>
+              <option value="donor">Blood Donor</option>
+              <option value="hospital">Hospital</option>
+            </select>
+            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400">
+              ▼
+            </div>
+          </div>
+          {errors.role && (
+            <p className="mt-1 text-xs text-red-600">{errors.role.message}</p>
           )}
         </div>
 
