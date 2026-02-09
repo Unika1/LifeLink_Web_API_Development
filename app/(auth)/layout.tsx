@@ -7,10 +7,10 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen w-full bg-zinc-100">
+    <div className="min-h-screen w-full bg-[radial-gradient(1200px_circle_at_top,_#fff1f2,_#f8fafc_55%,_#eef2ff)]">
       <div className="grid min-h-screen w-full grid-cols-1 md:grid-cols-2">
         {/* Left panel */}
-        <div className="hidden items-center justify-center bg-[#b8dfe2] md:flex">
+        <div className="hidden items-center justify-center bg-[radial-gradient(circle_at_top,_#dbeafe,_#fef3c7_55%,_#fff7ed)] md:flex">
           <div className="flex flex-col items-center gap-4 text-center">
             <Image
               src="/LifeLink.png"
@@ -19,6 +19,9 @@ export default function AuthLayout({
               height={180}
               priority
             />
+            <span className="rounded-full border border-white/70 bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-700">
+              LifeLink
+            </span>
             <h1 className="text-3xl font-semibold tracking-wide text-zinc-900">
               LifeLink
             </h1>
@@ -29,13 +32,13 @@ export default function AuthLayout({
         </div>
 
         {/* Right panel */}
-        <div className="flex items-center justify-center bg-white md:rounded-l-[48px]">
+        <div className="flex items-center justify-center bg-white/90 md:rounded-l-[48px] md:shadow-2xl md:shadow-slate-200/60">
           <div className="w-full max-w-md px-8 py-16">{children}</div>
         </div>
       </div>
 
       {/* Mobile logo */}
-      <div className="bg-[#b8dfe2] py-10 md:hidden">
+      <div className="bg-[#fde2e7] py-10 md:hidden">
         <div className="flex flex-col items-center gap-3">
           <Image
             src="/LifeLink.png"
