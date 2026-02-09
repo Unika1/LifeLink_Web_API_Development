@@ -185,10 +185,7 @@ export default function RegisterForm() {
           )}
         </div>
 
-        <button
-          type="submit"
-          className="mt-2 w-full rounded-xl bg-[#d4002a] py-3 text-sm font-semibold text-white shadow-lg shadow-red-200/60 transition hover:bg-[#b70024] active:scale-[0.99]"
-        >
+        <button type="submit" className="mt-2 w-full btn-primary">
           Create Account
         </button>
       </form>

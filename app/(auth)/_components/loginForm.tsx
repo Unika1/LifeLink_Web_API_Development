@@ -34,6 +34,8 @@ export default function LoginForm() {
     // Redirect based on user role
     if (res.data?.role === "admin") {
       router.push("/admin");
+    } else if (res.data?.role === "hospital") {
+      router.push("/hospital");
     } else {
       router.push("/dashboard");
     }
@@ -41,7 +43,7 @@ export default function LoginForm() {
 
 
   return (
-    <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-md">
+    <div className="w-full max-w-md rounded-2xl border border-white/70 bg-white/90 p-8 shadow-xl shadow-slate-200/60">
       <h1 className="mb-2 text-center text-2xl font-semibold text-zinc-900">
         Login
       </h1>
@@ -100,10 +102,7 @@ export default function LoginForm() {
           <p className="text-center text-sm text-red-600">{loginError}</p>
         )}
 
-        <button
-          type="submit"
-          className="w-full rounded-md bg-red-600 py-3 text-sm font-semibold text-white hover:bg-red-700"
-        >
+        <button type="submit" className="w-full btn-primary">
           Sign In
         </button>
       </form>
