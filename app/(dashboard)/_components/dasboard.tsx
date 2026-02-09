@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect, useState } from "react";
+import Cookies from "js-cookie";
 import { handleLogout } from "@/lib/actions/auth-actions";
+import { getRequests, updateRequest } from "@/lib/api/requests";
 
 function Card({
   children,
@@ -14,7 +17,7 @@ function Card({
   return (
     <div
       className={[
-        "rounded-2xl border border-zinc-200 bg-white shadow-[0_8px_24px_rgba(0,0,0,0.06)]",
+        "rounded-2xl border border-white/70 bg-white/90 shadow-[0_12px_30px_rgba(31,41,55,0.12)] backdrop-blur",
         className,
       ].join(" ")}
     >
@@ -24,10 +27,58 @@ function Card({
 }
 
 export default function DashboardPage() {
+  const [requests, setRequests] = useState<any[]>([]);
+  const [requestsLoading, setRequestsLoading] = useState(true);
+  const [requestsError, setRequestsError] = useState("");
+
+  useEffect(() => {
+    const loadRequests = async () => {
+      try {
+        setRequestsLoading(true);
+        setRequestsError("");
+        const userDataStr = Cookies.get("lifelink_user");
+        const user = userDataStr ? JSON.parse(userDataStr) : null;
+
+        if (!user?._id) {
+          setRequestsLoading(false);
+          return;
+        }
+
+        const response = await getRequests({ requestedBy: user._id });
+        if (response.success) {
+          setRequests(response.data || []);
+        } else {
+          setRequestsError(response.message || "Failed to load requests");
+        }
+      } catch (err: any) {
+        setRequestsError(err.message || "Failed to load requests");
+      } finally {
+        setRequestsLoading(false);
+      }
+    };
+
+    loadRequests();
+  }, []);
+
+  const handleFulfill = async (requestId: string) => {
+    try {
+      const response = await updateRequest(requestId, { status: "fulfilled" });
+      if (response.success) {
+        setRequests((prev) =>
+          prev.map((item) =>
+            item._id === requestId ? { ...item, status: "fulfilled" } : item
+          )
+        );
+      }
+    } catch (err: any) {
+      setRequestsError(err.message || "Failed to update request");
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#fbf7f7] text-zinc-900">
+    <div className="min-h-screen bg-[radial-gradient(1100px_circle_at_top,_#fff1f2,_#f8fafc_60%,_#e0f2fe)] text-zinc-900">
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white">
+      <header className="sticky top-0 z-30 border-b border-white/70 bg-white/80 backdrop-blur">
         <div className="mx-auto max-w-6xl px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -189,11 +240,79 @@ export default function DashboardPage() {
               </div>
               <div>
                 <p className="text-sm text-zinc-500">Active Requests</p>
-                <p className="mt-1 text-2xl font-semibold">3</p>
+                <p className="mt-1 text-2xl font-semibold">
+                  {requests.filter((item) => item.status === "pending").length}
+                </p>
               </div>
             </div>
           </Card>
 
+        </div>
+
+        <div className="mt-8">
+          <Card className="p-6">
+            <h2 className="text-sm font-semibold text-zinc-900">My Requests</h2>
+            {requestsLoading && (
+              <div className="mt-4 text-sm text-zinc-500">Loading requests...</div>
+            )}
+            {!requestsLoading && requestsError && (
+              <div className="mt-4 text-sm text-red-600">{requestsError}</div>
+            )}
+            {!requestsLoading && !requestsError && requests.length === 0 && (
+              <div className="mt-4 text-sm text-zinc-500">No requests yet</div>
+            )}
+            {!requestsLoading && !requestsError && requests.length > 0 && (
+              <div className="mt-4 overflow-hidden rounded-xl border border-zinc-100">
+                <table className="w-full text-sm">
+                  <thead className="bg-zinc-50 text-left text-xs uppercase text-zinc-500">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Hospital</th>
+                      <th className="px-4 py-3 font-medium">Blood</th>
+                      <th className="px-4 py-3 font-medium">Units</th>
+                      <th className="px-4 py-3 font-medium">Scheduled</th>
+                      <th className="px-4 py-3 font-medium">Status</th>
+                      <th className="px-4 py-3 font-medium">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100">
+                    {requests.map((request) => (
+                      <tr key={request._id}>
+                        <td className="px-4 py-3 text-zinc-700">
+                          {request.hospitalName || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-zinc-700">
+                          {request.bloodType}
+                        </td>
+                        <td className="px-4 py-3 text-zinc-700">
+                          {request.unitsRequested ?? "-"}
+                        </td>
+                        <td className="px-4 py-3 text-zinc-700">
+                          {request.scheduledAt
+                            ? new Date(request.scheduledAt).toLocaleString()
+                            : "-"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-medium text-orange-600">
+                            {request.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            type="button"
+                            onClick={() => handleFulfill(request._id)}
+                            disabled={request.status !== "approved"}
+                            className="text-xs font-semibold text-emerald-600 hover:underline disabled:opacity-40"
+                          >
+                            Mark fulfilled
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
         </div>
 
         {/* Bottom Navigation Links */}
@@ -210,12 +329,9 @@ export default function DashboardPage() {
                 <span className="text-sm font-semibold text-zinc-900">Request</span>
               </Link>
 
-              <Link 
-                href="/user/profile" 
+              <Link
+                href="/user/profile"
                 className="flex flex-col items-center gap-3 rounded-xl p-4 hover:bg-zinc-50 transition"
-                onClick={(e) => {
-                  console.log('Profile link clicked');
-                }}
               >
                 <span className="text-3xl">👤</span>
                 <span className="text-sm font-semibold text-zinc-900">Profile</span>
