@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import SectionHeader from "@/app/_components/SectionHeader";
 import { adminGetUsers, adminDeleteUser } from "@/lib/api/user";
 
 interface User {
@@ -79,21 +80,20 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-zinc-900">Users</h1>
-          <p className="mt-1 text-zinc-600">
-            {pagination ? `Showing ${users.length} of ${pagination.total} users` : "Manage hospital staff and system users"}
-          </p>
-        </div>
-        <Link
-          href="/admin/users/create"
-          className="rounded-lg bg-[#d4002a] px-6 py-2 font-semibold text-white hover:bg-[#b8002a] transition"
-        >
-          + Add User
-        </Link>
-      </div>
+      <SectionHeader
+        eyebrow="Admin"
+        title="Users"
+        subtitle={
+          pagination
+            ? `Showing ${users.length} of ${pagination.total} users`
+            : "Manage hospital staff and system users"
+        }
+        action={
+          <Link href="/admin/users/create" className="btn-primary">
+            + Add User
+          </Link>
+        }
+      />
 
       {/* Error Message */}
       {error && (
@@ -103,7 +103,7 @@ export default function AdminUsersPage() {
       )}
 
       {/* Page Size Selector */}
-      <div className="rounded-xl border border-zinc-200 bg-white p-4">
+      <div className="rounded-2xl border border-white/70 bg-white/90 p-4 shadow-[0_12px_30px_rgba(31,41,55,0.12)] backdrop-blur">
         <label className="text-sm font-medium text-zinc-900">
           Items per page:
           <select
@@ -123,7 +123,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Users Table */}
-      <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden">
+      <div className="rounded-2xl border border-white/70 bg-white/90 overflow-hidden shadow-[0_12px_30px_rgba(31,41,55,0.12)] backdrop-blur">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -182,19 +182,19 @@ export default function AdminUsersPage() {
                       <div className="flex justify-end gap-2">
                         <Link
                           href={`/admin/users/${user._id}`}
-                          className="text-[#d4002a] hover:underline text-xs font-semibold"
+                          className="btn-ghost text-xs"
                         >
                           View
                         </Link>
                         <Link
                           href={`/admin/users/${user._id}/edit`}
-                          className="text-blue-600 hover:underline text-xs font-semibold"
+                          className="btn-ghost text-xs text-blue-600"
                         >
                           Edit
                         </Link>
                         <button
                           onClick={() => setDeleteConfirm(user._id)}
-                          className="text-red-600 hover:underline text-xs font-semibold"
+                          className="btn-ghost text-xs text-red-600"
                         >
                           Delete
                         </button>

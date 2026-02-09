@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import SectionHeader from "@/app/_components/SectionHeader";
 import { adminGetUsers } from "@/lib/api/user";
+import { getHospitals } from "@/lib/api/hospital";
 
 interface User {
   _id: string;
@@ -9,6 +11,18 @@ interface User {
   lastName: string;
   email: string;
   role: string;
+  createdAt: string;
+}
+
+interface Hospital {
+  _id: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  address: {
+    city: string;
+    state: string;
+  };
   createdAt: string;
 }
 
@@ -22,7 +36,7 @@ function Card({
   return (
     <div
       className={[
-        "rounded-xl border border-zinc-200 bg-white p-6",
+        "rounded-2xl border border-white/70 bg-white/90 p-6 shadow-[0_12px_30px_rgba(31,41,55,0.12)] backdrop-blur",
         className,
       ].join(" ")}
     >
@@ -50,6 +64,7 @@ function StatCard({
 
 export default function AdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -59,21 +74,31 @@ export default function AdminDashboard() {
 
   const loadUsers = async () => {
     try {
-      setLoading(false);
-      const response = await adminGetUsers();
-      if (response.success) {
-        setUsers(response.data || []);
+      setLoading(true);
+      setError("");
+      const [usersResponse, hospitalsResponse] = await Promise.all([
+        adminGetUsers(),
+        getHospitals(),
+      ]);
+
+      if (usersResponse.success) {
+        setUsers(usersResponse.data || []);
+      }
+
+      if (hospitalsResponse.success) {
+        setHospitals(hospitalsResponse.data || []);
       }
     } catch (err: any) {
-      setError(err.message || "Failed to load users");
+      setError(err.message || "Failed to load dashboard data");
+    } finally {
       setLoading(false);
     }
   };
 
   const stats = [
     { label: "Total Users", value: users.length, color: "bg-[#3b82f6]" },
-    { label: "Admin Users", value: users.filter((u) => u.role === "admin").length, color: "bg-[#60d5c8]" },
-    { label: "Regular Users", value: users.filter((u) => u.role === "user").length, color: "bg-[#9cf04e]" },
+    { label: "Donors", value: users.filter((u) => u.role === "donor").length, color: "bg-[#22c55e]" },
+    { label: "Hospitals", value: hospitals.length, color: "bg-[#f59e0b]" },
   ];
 
   const bloodGroups = [
@@ -100,9 +125,11 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold text-zinc-900">Hospital Dashboard</h2>
-      </div>
+      <SectionHeader
+        eyebrow="Admin"
+        title="Overview"
+        subtitle="Track users, hospitals, and platform health at a glance."
+      />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {stats.map((stat) => (
