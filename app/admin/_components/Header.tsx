@@ -1,8 +1,17 @@
 "use client";
 
 import { handleLogout } from "@/lib/actions/auth-actions";
+import { useAdminSearch } from "../context/AdminContext";
 
 export default function Header() {
+  const { searchQuery, setSearchQuery } = useAdminSearch();
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    console.log("Header: Search input changed to:", value);
+    setSearchQuery(value);
+  };
+
   return (
     <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white">
       <div className="flex items-center justify-between px-6 py-4">
@@ -19,7 +28,9 @@ export default function Header() {
               <span className="text-xs text-zinc-400">🔍</span>
               <input
                 type="search"
-                placeholder="Search"
+                placeholder="Search users, hospitals, blood types..."
+                value={searchQuery}
+                onChange={handleSearchChange}
                 className="w-48 bg-transparent text-sm text-zinc-700 placeholder:text-zinc-400 focus:outline-none"
               />
             </div>
