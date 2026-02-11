@@ -50,6 +50,7 @@ export const handleLogin = async (data: LoginData) => {
         success: true,
         message: "Login successful",
         data: response.data,
+        token: response.token,
       };
     }
 
