@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import SectionHeader from "@/app/_components/SectionHeader";
+import { useAdminSearch } from "./context/AdminContext";
 import { adminGetUsers } from "@/lib/api/user";
 import { getHospitals } from "@/lib/api/hospital";
+import { getRequests } from "@/lib/api/requests";
 
 interface User {
   _id: string;
@@ -23,6 +25,13 @@ interface Hospital {
     city: string;
     state: string;
   };
+  createdAt: string;
+}
+
+interface BloodRequest {
+  _id: string;
+  bloodType: string;
+  status: string;
   createdAt: string;
 }
 
@@ -63,10 +72,17 @@ function StatCard({
 }
 
 export default function AdminDashboard() {
+  const { searchQuery } = useAdminSearch();
   const [users, setUsers] = useState<User[]>([]);
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [requests, setRequests] = useState<BloodRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Debug: Log search query changes
+  useEffect(() => {
+    console.log("Search query updated:", searchQuery);
+  }, [searchQuery]);
 
   useEffect(() => {
     loadUsers();
@@ -76,19 +92,45 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       setError("");
-      const [usersResponse, hospitalsResponse] = await Promise.all([
+      console.log("Loading admin data...");
+      const [usersResponse, hospitalsResponse, requestsResponse] = await Promise.all([
         adminGetUsers(),
         getHospitals(),
+        getRequests(),
       ]);
 
-      if (usersResponse.success) {
-        setUsers(usersResponse.data || []);
+      console.log("Users response:", usersResponse);
+      console.log("Hospitals response:", hospitalsResponse);
+      console.log("Requests response:", requestsResponse);
+
+      // Handle users response
+      if (usersResponse?.success && usersResponse?.data) {
+        setUsers(Array.isArray(usersResponse.data) ? usersResponse.data : []);
+        console.log("Users set:", usersResponse.data);
+      } else if (Array.isArray(usersResponse)) {
+        setUsers(usersResponse);
+        console.log("Users set (direct array):", usersResponse);
       }
 
-      if (hospitalsResponse.success) {
-        setHospitals(hospitalsResponse.data || []);
+      // Handle hospitals response
+      if (hospitalsResponse?.success && hospitalsResponse?.data) {
+        setHospitals(Array.isArray(hospitalsResponse.data) ? hospitalsResponse.data : []);
+        console.log("Hospitals set:", hospitalsResponse.data);
+      } else if (Array.isArray(hospitalsResponse)) {
+        setHospitals(hospitalsResponse);
+        console.log("Hospitals set (direct array):", hospitalsResponse);
+      }
+
+      // Handle requests response
+      if (requestsResponse?.success && requestsResponse?.data) {
+        setRequests(Array.isArray(requestsResponse.data) ? requestsResponse.data : []);
+        console.log("Requests set:", requestsResponse.data);
+      } else if (Array.isArray(requestsResponse)) {
+        setRequests(requestsResponse);
+        console.log("Requests set (direct array):", requestsResponse);
       }
     } catch (err: any) {
+      console.error("Error loading dashboard data:", err);
       setError(err.message || "Failed to load dashboard data");
     } finally {
       setLoading(false);
@@ -101,20 +143,71 @@ export default function AdminDashboard() {
     { label: "Hospitals", value: hospitals.length, color: "bg-[#f59e0b]" },
   ];
 
-  const bloodGroups = [
-    { label: "A+", value: 32, color: "bg-[#f17d59]" },
-    { label: "O+", value: 24, color: "bg-[#3b82f6]" },
-    { label: "B+", value: 38, color: "bg-[#f59e0b]" },
-    { label: "AB-", value: 28, color: "bg-[#64748b]" },
-    { label: "AB+", value: 34, color: "bg-[#22c55e]" },
-  ];
+  const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+  const bloodTypeCounts = bloodTypes.map((type) => ({
+    label: type,
+    value: requests.filter((request) => request.bloodType === type).length,
+  }));
 
+  // Filter users based on search query
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery.trim()) return users;
+    
+    const query = searchQuery.toLowerCase();
+    const filtered = users.filter(
+      (user) =>
+        user.firstName.toLowerCase().includes(query) ||
+        user.lastName.toLowerCase().includes(query) ||
+        user.email.toLowerCase().includes(query) ||
+        user.role.toLowerCase().includes(query)
+    );
+    console.log(`Filtered users for "${searchQuery}":`, filtered.length, "out of", users.length);
+    return filtered;
+  }, [users, searchQuery]);
+
+  // Filter hospitals based on search query
+  const filteredHospitals = useMemo(() => {
+    if (!searchQuery.trim()) return hospitals;
+    
+    const query = searchQuery.toLowerCase();
+    return hospitals.filter(
+      (hospital) =>
+        hospital.name.toLowerCase().includes(query) ||
+        hospital.email.toLowerCase().includes(query) ||
+        hospital.address?.city?.toLowerCase().includes(query) ||
+        hospital.address?.state?.toLowerCase().includes(query)
+    );
+  }, [hospitals, searchQuery]);
+
+  // Filter requests based on search query
+  const filteredRequests = useMemo(() => {
+    if (!searchQuery.trim()) return requests;
+    
+    const query = searchQuery.toLowerCase();
+    return requests.filter(
+      (request) =>
+        request.bloodType.toLowerCase().includes(query) ||
+        request.status.toLowerCase().includes(query)
+    );
+  }, [requests, searchQuery]);
+
+  const maxCount = Math.max(...bloodTypeCounts.map((item) => item.value), 1);
+  const bloodGroups = bloodTypeCounts.map((item, index) => ({
+    ...item,
+    color: ["bg-[#f17d59]", "bg-[#3b82f6]", "bg-[#f59e0b]", "bg-[#64748b]", "bg-[#22c55e]"][
+      index % 5
+    ],
+    height: Math.round((item.value / maxCount) * 120) + 30,
+  }));
+
+  const pendingRequests = requests.filter((request) => request.status === "pending").length;
   const alerts = [
-    "Blood stock low: O+",
-    "Pending request approvals",
+    pendingRequests > 0
+      ? `${pendingRequests} pending request approvals`
+      : "No pending request approvals",
   ];
 
-  const recentRequests = users.slice(0, 5).map((user, index) => ({
+  const recentRequests = filteredUsers.slice(0, 5).map((user, index) => ({
     id: `U${String(index + 1).padStart(3, "0")}`,
     person: `${user.firstName} ${user.lastName}`,
     email: user.email,
@@ -154,10 +247,10 @@ export default function AdminDashboard() {
               <div key={group.label} className="flex flex-1 flex-col items-center">
                 <div
                   className={`w-full rounded-md ${group.color}`}
-                  style={{ height: `${group.value * 2.2}px` }}
+                  style={{ height: `${group.height}px` }}
                 />
                 <span className="mt-3 text-xs font-medium text-zinc-500">
-                  {group.label}
+                  {group.label} ({group.value})
                 </span>
               </div>
             ))}
@@ -183,14 +276,23 @@ export default function AdminDashboard() {
 
       <Card>
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-zinc-900">Recent Users</h3>
+          <div>
+            <h3 className="text-sm font-semibold text-zinc-900">Recent Users</h3>
+            {searchQuery && (
+              <p className="mt-1 text-xs text-zinc-500">
+                Found {filteredUsers.length} user(s) matching "{searchQuery}"
+              </p>
+            )}
+          </div>
         </div>
         {loading ? (
           <div className="text-center text-zinc-600">Loading users...</div>
         ) : error ? (
           <div className="text-center text-red-600">{error}</div>
-        ) : users.length === 0 ? (
-          <div className="text-center text-zinc-600">No users found</div>
+        ) : filteredUsers.length === 0 ? (
+          <div className="text-center text-zinc-600">
+            {searchQuery ? "No users match your search" : "No users found"}
+          </div>
         ) : (
           <div className="overflow-hidden rounded-xl border border-zinc-100">
             <table className="w-full text-sm">
