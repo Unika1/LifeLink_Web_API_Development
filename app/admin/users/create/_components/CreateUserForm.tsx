@@ -242,7 +242,6 @@ export default function CreateUserForm() {
             </div>
           </div>
 
-          {/* Role Select */}
           <div>
             <label className="block text-sm font-semibold text-zinc-900 mb-2">
               Role *
@@ -258,7 +257,7 @@ export default function CreateUserForm() {
               <option value="admin">Admin</option>
             </select>
             <p className="mt-1 text-xs text-zinc-600">
-              Choose the user's role in the system
+              Choose the user's role in the system.
             </p>
           </div>
 
