@@ -9,14 +9,16 @@ interface User {
   role: string;
 }
 
-export default function AdminUserEditPage({
+export default async function AdminUserEditPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
+  
   return (
     <div className="mx-auto max-w-3xl">
-      <EditUserForm userId={params.id} />
+      <EditUserForm userId={id} />
     </div>
   );
 }
