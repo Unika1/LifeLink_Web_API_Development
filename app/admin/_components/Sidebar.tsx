@@ -6,9 +6,9 @@ import { usePathname } from "next/navigation";
 const navItems = [
   { label: "Overview", href: "/admin" },
   { label: "Blood Requests", href: "/admin/requests" },
-  { label: "Donors", href: "/admin/users" },
+  { label: "Hospitals", href: "/admin/hospitals" },
+  { label: "Users", href: "/admin/users" },
   { label: "Blood Inventory", href: "/admin/inventory" },
-  { label: "Staff", href: "/admin/staff" },
   { label: "Profile", href: "/admin/profile" },
   { label: "Settings", href: "/admin/settings" },
 ];
