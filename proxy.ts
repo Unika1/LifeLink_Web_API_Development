@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const publicRoutes = ['/login', '/register', '/forget-password', '/reset-password'];
+const publicRoutes = [
+  '/',
+  '/login',
+  '/register',
+  '/forget-password',
+  '/reset-password'
+];
 const adminRoutes = ['/admin'];
-const userRoutes = ['/user', '/dashboard'];
+const userRoutes = ['/user', '/dashboard', '/request', '/eligibility'];
 const hospitalRoutes = ['/hospital'];
 
 export function proxy(request: NextRequest) {
@@ -19,10 +25,22 @@ export function proxy(request: NextRequest) {
     user = null;
   }
 
-  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+  const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(`${route}/`));
   const isAdminRoute = adminRoutes.some(route => pathname.startsWith(route));
   const isUserRoute = userRoutes.some(route => pathname.startsWith(route));
   const isHospitalRoute = hospitalRoutes.some(route => pathname.startsWith(route));
+
+  if (pathname === '/' && token && user?.role) {
+    if (user.role === 'admin') {
+      return NextResponse.redirect(new URL('/admin', request.url));
+    }
+    if (user.role === 'hospital') {
+      return NextResponse.redirect(new URL('/hospital', request.url));
+    }
+    if (user.role === 'donor') {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+  }
   
   // Redirect to login if not authenticated and not on public route
   if (!token && !isPublicRoute) {
@@ -52,9 +70,12 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/',
     '/admin/:path*',
     '/user/:path*',
     '/dashboard',
+    '/request',
+    '/eligibility',
     '/hospital/:path*',
     '/login',
     '/register',
