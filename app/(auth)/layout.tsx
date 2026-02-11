@@ -13,7 +13,7 @@ export default function AuthLayout({
         <div className="hidden items-center justify-center bg-[radial-gradient(circle_at_top,_#dbeafe,_#fef3c7_55%,_#fff7ed)] md:flex">
           <div className="flex flex-col items-center gap-4 text-center">
             <Image
-              src="/LifeLink.png"
+              src="/lifelink.png"
               alt="LifeLink logo"
               width={180}
               height={180}
@@ -41,7 +41,7 @@ export default function AuthLayout({
       <div className="bg-[#fde2e7] py-10 md:hidden">
         <div className="flex flex-col items-center gap-3">
           <Image
-            src="/LifeLink.png"
+            src="/lifelink.png"
             alt="LifeLink logo"
             width={120}
             height={120}
