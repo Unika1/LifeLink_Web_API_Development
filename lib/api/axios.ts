@@ -9,6 +9,7 @@ const axiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true,
 });
 
 // Add request interceptor to include auth token
@@ -20,8 +21,12 @@ axiosInstance.interceptors.request.use(
       }
     }
     const token = Cookies.get("lifelink_token");
+    console.log("[axios interceptor] Token from cookie:", token ? "Found" : "Not found");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log("[axios interceptor] Set Authorization header");
+    } else {
+      console.log("[axios interceptor] No token found in cookies");
     }
     return config;
   },
