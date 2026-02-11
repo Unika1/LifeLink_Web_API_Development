@@ -56,12 +56,25 @@ export const deleteUser = async (id: string) => {
 };
 
 // Admin API Functions
-export const adminGetUsers = async (page?: number, limit?: number) => {
+export const adminGetUsers = async (
+  page?: number,
+  limit?: number,
+  role?: string
+) => {
   try {
-    let url = "/api/admin/users";
-    if (page !== undefined && limit !== undefined) {
-      url += `?page=${page}&limit=${limit}`;
+    const query = new URLSearchParams();
+    if (page !== undefined) {
+      query.append("page", String(page));
     }
+    if (limit !== undefined) {
+      query.append("limit", String(limit));
+    }
+    if (role) {
+      query.append("role", role);
+    }
+
+    const suffix = query.toString() ? `?${query.toString()}` : "";
+    const url = `/api/admin/users${suffix}`;
     const response = await axios.get(url);
     return response.data;
   } catch (error: any) {

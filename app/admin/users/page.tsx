@@ -86,7 +86,7 @@ export default function AdminUsersPage() {
         subtitle={
           pagination
             ? `Showing ${users.length} of ${pagination.total} users`
-            : "Manage hospital staff and system users"
+            : "Manage registered users"
         }
         action={
           <Link href="/admin/users/create" className="btn-primary">

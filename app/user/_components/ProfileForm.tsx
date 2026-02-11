@@ -12,8 +12,8 @@ interface UserData {
   firstName?: string;
   lastName?: string;
   username?: string;
-  phone?: string;
-  bio?: string;
+  phoneNumber?: string;
+  bloodGroup?: string;
   imageUrl?: string;
   role: string;
   createdAt: string;
@@ -32,8 +32,8 @@ export default function ProfileForm() {
     firstName: "",
     lastName: "",
     email: "",
-    phone: "",
-    bio: "",
+    phoneNumber: "",
+    bloodGroup: "",
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -68,8 +68,8 @@ export default function ProfileForm() {
             firstName: parsedCookieUser.firstName || "",
             lastName: parsedCookieUser.lastName || "",
             email: parsedCookieUser.email || "",
-            phone: parsedCookieUser.phone || "",
-            bio: parsedCookieUser.bio || "",
+            phoneNumber: parsedCookieUser.phoneNumber || "",
+            bloodGroup: parsedCookieUser.bloodGroup || "",
           });
         } else {
           console.error("No user data found!");
@@ -85,7 +85,7 @@ export default function ProfileForm() {
   }, [router]);
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -117,11 +117,11 @@ export default function ProfileForm() {
       form.append("firstName", formData.firstName);
       form.append("lastName", formData.lastName);
       form.append("email", formData.email);
-      if (formData.phone) {
-        form.append("phone", formData.phone);
+      if (formData.phoneNumber) {
+        form.append("phoneNumber", formData.phoneNumber);
       }
-      if (formData.bio) {
-        form.append("bio", formData.bio);
+      if (formData.bloodGroup) {
+        form.append("bloodGroup", formData.bloodGroup);
       }
       if (imageFile) {
         form.append("image", imageFile);
@@ -246,7 +246,7 @@ export default function ProfileForm() {
                       onError={() => setImageError(true)}
                     />
                   ) : (
-                    <div className="flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-[#d4002a] to-[#ff6b9d] text-5xl text-white">
+                    <div className="flex h-32 w-32 items-center justify-center rounded-full bg-linear-to-br from-[#d4002a] to-[#ff6b9d] text-5xl text-white">
                       {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
                     </div>
                   )}
@@ -325,12 +325,12 @@ export default function ProfileForm() {
 
                 <div>
                   <label className="block text-sm font-medium text-zinc-700 mb-2">
-                    Phone
+                    Phone Number
                   </label>
                   <input
                     type="tel"
-                    name="phone"
-                    value={formData.phone}
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
                     onChange={handleInputChange}
                     disabled={!isEditing}
                     className="w-full rounded-lg border border-zinc-300 px-4 py-2 text-sm focus:border-[#d4002a] focus:outline-none focus:ring-4 focus:ring-red-100 disabled:bg-zinc-50 disabled:text-zinc-500"
@@ -339,16 +339,25 @@ export default function ProfileForm() {
 
                 <div>
                   <label className="block text-sm font-medium text-zinc-700 mb-2">
-                    Bio
+                    Blood Group
                   </label>
-                  <textarea
-                    name="bio"
-                    value={formData.bio}
+                  <select
+                    name="bloodGroup"
+                    value={formData.bloodGroup}
                     onChange={handleInputChange}
                     disabled={!isEditing}
-                    rows={4}
                     className="w-full rounded-lg border border-zinc-300 px-4 py-2 text-sm focus:border-[#d4002a] focus:outline-none focus:ring-4 focus:ring-red-100 disabled:bg-zinc-50 disabled:text-zinc-500"
-                  />
+                  >
+                    <option value="">Select blood group</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                  </select>
                 </div>
 
                 <div className="flex gap-4">
@@ -378,8 +387,8 @@ export default function ProfileForm() {
                             firstName: user?.firstName || "",
                             lastName: user?.lastName || "",
                             email: user?.email || "",
-                            phone: user?.phone || "",
-                            bio: user?.bio || "",
+                            phoneNumber: user?.phoneNumber || "",
+                            bloodGroup: user?.bloodGroup || "",
                           });
                         }}
                         className="rounded-lg border border-zinc-300 px-6 py-3 font-medium text-zinc-700 hover:bg-zinc-50 transition"

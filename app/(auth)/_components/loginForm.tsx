@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginData } from "../schema";
 import { handleLogin } from "@/lib/actions/auth-actions";
+import Cookies from "js-cookie";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -29,6 +30,11 @@ export default function LoginForm() {
     if (!res.success) {
       setLoginError(res.message || "Invalid email or password");
       return;
+    }
+
+    if (res.token && res.data) {
+      Cookies.set("lifelink_token", res.token, { path: "/" });
+      Cookies.set("lifelink_user", JSON.stringify(res.data), { path: "/" });
     }
 
     // Redirect based on user role

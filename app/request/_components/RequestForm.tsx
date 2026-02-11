@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import SectionHeader from "@/app/_components/SectionHeader";
@@ -38,6 +38,7 @@ interface RequestItem {
 
 export default function RequestPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -45,20 +46,13 @@ export default function RequestPage() {
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [requestsError, setRequestsError] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editValues, setEditValues] = useState({
-    hospitalName: "",
-    patientName: "",
-    bloodType: "",
-    unitsRequested: 1,
-    contactPhone: "",
-    notes: "",
-  });
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
+    setValue,
   } = useForm<RequestData>({
     resolver: zodResolver(requestSchema),
     defaultValues: {
@@ -70,6 +64,42 @@ export default function RequestPage() {
       notes: "",
     },
   });
+
+  // Auto-detect edit mode from ?edit={id} in URL
+  useEffect(() => {
+    const editId = searchParams.get("edit");
+    if (editId && editId !== editingId) {
+      setEditingId(editId);
+      setSuccess("");
+      setError("");
+      (async () => {
+        setLoading(true);
+        try {
+          const response = await import("@/lib/api/requests").then(mod => mod.getRequestById(editId));
+          if (response.success && response.data) {
+            reset({
+              hospitalName: response.data.hospitalName || "",
+              patientName: response.data.patientName || "",
+              bloodType: response.data.bloodType || "",
+              unitsRequested: response.data.unitsRequested ?? 1,
+              contactPhone: response.data.contactPhone || "",
+              notes: response.data.notes || "",
+            });
+          } else {
+            setError(response.message || "Failed to fetch request data for editing");
+          }
+        } catch (err: any) {
+          setError(err.message || "Failed to fetch request data for editing");
+        } finally {
+          setLoading(false);
+        }
+      })();
+    } else if (!editId && editingId) {
+      // If edit param is removed, reset edit state
+      setEditingId(null);
+      reset();
+    }
+  }, [searchParams, editingId, reset]);
 
   useEffect(() => {
     const loadHospitals = async () => {
@@ -122,91 +152,87 @@ export default function RequestPage() {
   const onSubmit = async (values: RequestData) => {
     setError("");
     setSuccess("");
-
     try {
-      const response = await createRequest({
-        hospitalName: values.hospitalName,
-        patientName: values.patientName.trim(),
-        bloodType: values.bloodType,
-        unitsRequested: values.unitsRequested,
-        contactPhone: values.contactPhone?.trim() || undefined,
-        notes: values.notes?.trim() || undefined,
-      });
+      let response;
+      if (editingId) {
+        response = await updateRequest(editingId, {
+          hospitalName: values.hospitalName,
+          patientName: values.patientName.trim(),
+          bloodType: values.bloodType,
+          unitsRequested: values.unitsRequested,
+          contactPhone: values.contactPhone?.trim() || undefined,
+          notes: values.notes?.trim() || undefined,
+        });
+      } else {
+        response = await createRequest({
+          hospitalName: values.hospitalName,
+          patientName: values.patientName.trim(),
+          bloodType: values.bloodType,
+          unitsRequested: values.unitsRequested,
+          contactPhone: values.contactPhone?.trim() || undefined,
+          notes: values.notes?.trim() || undefined,
+        });
+      }
 
       if (!response.success) {
-        setError(response.message || "Failed to submit request");
+        setError(response.message || (editingId ? "Failed to update request" : "Failed to submit request"));
         return;
       }
 
       if (response.data) {
-        setRequests((prev) => [response.data, ...prev]);
+        if (editingId) {
+          setRequests((prev) => prev.map((item) => (item._id === editingId ? response.data : item)));
+        } else {
+          setRequests((prev) => [response.data, ...prev]);
+        }
       }
 
-      setSuccess("Request submitted successfully");
+      setSuccess(editingId ? "Request updated successfully" : "Request submitted successfully");
       reset();
+      setEditingId(null);
       setTimeout(() => {
         router.push("/dashboard");
       }, 800);
     } catch (err: any) {
-      setError(err.message || "Failed to submit request");
+      setError(err.message || (editingId ? "Failed to update request" : "Failed to submit request"));
     }
   };
 
-  const handleStartEdit = (request: RequestItem) => {
+  const handleStartEdit = async (request: RequestItem) => {
     setEditingId(request._id);
-    setEditValues({
-      hospitalName: request.hospitalName,
-      patientName: request.patientName,
-      bloodType: request.bloodType,
-      unitsRequested: request.unitsRequested ?? 1,
-      contactPhone: request.contactPhone || "",
-      notes: request.notes || "",
-    });
+    setSuccess("");
+    setError("");
+    try {
+      setLoading(true);
+      // Fetch latest data from backend
+      const response = await import("@/lib/api/requests").then(mod => mod.getRequestById(request._id));
+      if (response.success && response.data) {
+        reset({
+          hospitalName: response.data.hospitalName || "",
+          patientName: response.data.patientName || "",
+          bloodType: response.data.bloodType || "",
+          unitsRequested: response.data.unitsRequested ?? 1,
+          contactPhone: response.data.contactPhone || "",
+          notes: response.data.notes || "",
+        });
+      } else {
+        setError(response.message || "Failed to fetch request data for editing");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to fetch request data for editing");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancelEdit = () => {
     setEditingId(null);
+    reset();
+    setSuccess("");
+    setError("");
+    router.push("/dashboard");
   };
 
-  const handleEditChange = (
-    field: keyof typeof editValues,
-    value: string
-  ) => {
-    setEditValues((prev) => ({
-      ...prev,
-      [field]: field === "unitsRequested" ? Number(value) || 1 : value,
-    }));
-  };
-
-  const handleUpdateRequest = async () => {
-    if (!editingId) {
-      return;
-    }
-
-    setRequestsError("");
-
-    try {
-      const response = await updateRequest(editingId, {
-        hospitalName: editValues.hospitalName,
-        patientName: editValues.patientName.trim(),
-        bloodType: editValues.bloodType,
-        unitsRequested: Number(editValues.unitsRequested) || 1,
-        contactPhone: editValues.contactPhone.trim() || undefined,
-        notes: editValues.notes.trim() || undefined,
-      });
-
-      if (response.success && response.data) {
-        setRequests((prev) =>
-          prev.map((item) => (item._id === editingId ? response.data : item))
-        );
-        setEditingId(null);
-      } else {
-        setRequestsError(response.message || "Failed to update request");
-      }
-    } catch (err: any) {
-      setRequestsError(err.message || "Failed to update request");
-    }
-  };
 
   const handleDeleteRequest = async (id: string) => {
     const confirmed = window.confirm("Delete this request?");
@@ -346,14 +372,14 @@ export default function RequestPage() {
             )}
             <button
               type="button"
-              onClick={() => router.push("/dashboard")}
+              onClick={editingId ? handleCancelEdit : () => router.push("/dashboard")}
               className="btn-secondary"
               disabled={isSubmitting}
             >
-              Cancel
+              {editingId ? "Cancel Edit" : "Cancel"}
             </button>
             <button type="submit" className="btn-primary" disabled={isSubmitting}>
-              {isSubmitting ? "Submitting..." : "Submit Request"}
+              {isSubmitting ? (editingId ? "Updating..." : "Submitting...") : (editingId ? "Update Request" : "Submit Request")}
             </button>
           </div>
         </form>
@@ -453,118 +479,7 @@ export default function RequestPage() {
             </div>
           )}
 
-          {editingId && (
-            <div className="mt-6 rounded-2xl border border-zinc-100 bg-white p-6">
-              <SectionHeader
-                eyebrow="Edit"
-                title="Update Request"
-                subtitle="Make changes to your pending request."
-              />
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <div className="sm:col-span-2">
-                  <label className="text-sm font-medium text-zinc-700">Hospital</label>
-                  <select
-                    value={editValues.hospitalName}
-                    onChange={(event) =>
-                      handleEditChange("hospitalName", event.target.value)
-                    }
-                    className="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 outline-none focus:border-[#d4002a] focus:ring-4 focus:ring-red-100"
-                  >
-                    <option value="">Select hospital</option>
-                    {hospitalNames.map((name) => (
-                      <option key={name} value={name}>
-                        {name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-zinc-700">Patient Name</label>
-                  <input
-                    value={editValues.patientName}
-                    onChange={(event) =>
-                      handleEditChange("patientName", event.target.value)
-                    }
-                    className="mt-2 w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm text-zinc-900 outline-none focus:border-[#d4002a] focus:ring-4 focus:ring-red-100"
-                    placeholder="Patient name"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-zinc-700">Blood Type</label>
-                  <select
-                    value={editValues.bloodType}
-                    onChange={(event) =>
-                      handleEditChange("bloodType", event.target.value)
-                    }
-                    className="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 outline-none focus:border-[#d4002a] focus:ring-4 focus:ring-red-100"
-                  >
-                    <option value="">Select blood type</option>
-                    {bloodTypes.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-zinc-700">Units Needed</label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={editValues.unitsRequested}
-                    onChange={(event) =>
-                      handleEditChange("unitsRequested", event.target.value)
-                    }
-                    className="mt-2 w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm text-zinc-900 outline-none focus:border-[#d4002a] focus:ring-4 focus:ring-red-100"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-zinc-700">Contact Phone</label>
-                  <input
-                    value={editValues.contactPhone}
-                    onChange={(event) =>
-                      handleEditChange("contactPhone", event.target.value)
-                    }
-                    className="mt-2 w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm text-zinc-900 outline-none focus:border-[#d4002a] focus:ring-4 focus:ring-red-100"
-                    placeholder="98xxxxxxxx"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="text-sm font-medium text-zinc-700">Notes</label>
-                  <textarea
-                    value={editValues.notes}
-                    onChange={(event) =>
-                      handleEditChange("notes", event.target.value)
-                    }
-                    className="mt-2 min-h-[120px] w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm text-zinc-900 outline-none focus:border-[#d4002a] focus:ring-4 focus:ring-red-100"
-                    placeholder="Additional notes"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-6 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={handleCancelEdit}
-                  className="btn-secondary"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleUpdateRequest}
-                  className="btn-primary"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Edit section removed: editing now uses the main form above */}
         </div>
       </div>
     </div>
