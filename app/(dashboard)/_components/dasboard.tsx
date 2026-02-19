@@ -4,9 +4,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { handleLogout } from "@/lib/actions/auth-actions";
 import { getRequests, updateRequest, deleteRequest } from "@/lib/api/requests";
+import { getOrganRequests, deleteOrganRequest } from "@/lib/api/organ-requests";
 
 function Card({
   children,
@@ -28,12 +30,17 @@ function Card({
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const pathname = usePathname();
   const [requests, setRequests] = useState<any[]>([]);
   const [requestsLoading, setRequestsLoading] = useState(true);
   const [requestsError, setRequestsError] = useState("");
   const [userName, setUserName] = useState("Donor");
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
+  const [showRequestMenu, setShowRequestMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [seenNotificationIds, setSeenNotificationIds] = useState<string[]>([]);
   // Show location permission modal if location is not set and user clicks hospital/blood bank
   const handleEnableLocation = () => {
     setShowLocationPrompt(true);
@@ -41,6 +48,57 @@ export default function DashboardPage() {
   const [locationName, setLocationName] = useState<string>("");
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState("");
+
+  const loadRequests = async () => {
+    try {
+      setRequestsLoading(true);
+      setRequestsError("");
+      const userDataStr = Cookies.get("lifelink_user");
+      const user = userDataStr ? JSON.parse(userDataStr) : null;
+
+      if (!user?._id) {
+        setRequests([]);
+        return;
+      }
+
+      if (user?.firstName) {
+        setUserName(user.firstName);
+      }
+
+      const [bloodResponse, organResponse] = await Promise.all([
+        getRequests({ requestedBy: user._id }),
+        getOrganRequests({ requestedBy: user._id }),
+      ]);
+
+      if (!bloodResponse.success && !organResponse.success) {
+        setRequestsError(
+          bloodResponse.message || organResponse.message || "Failed to load requests"
+        );
+        setRequests([]);
+        return;
+      }
+
+      const bloodRequests = (bloodResponse.data || []).map((item: any) => ({
+        ...item,
+        requestType: "blood",
+        status: item.status || "pending",
+      }));
+
+      const organRequests = (organResponse.data || []).map((item: any) => ({
+        ...item,
+        requestType: "organ",
+        bloodType: "Organ",
+        unitsRequested: null,
+        status: item.status || "pending",
+      }));
+
+      setRequests([...bloodRequests, ...organRequests]);
+    } catch (err: any) {
+      setRequestsError(err.message || "Failed to load requests");
+    } finally {
+      setRequestsLoading(false);
+    }
+  };
 
   // Handles click on the Nearby Hospital card
   const handleNearbyHospitalClick = async () => {
@@ -87,55 +145,36 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    const loadRequests = async () => {
+    const savedValue = window.localStorage.getItem("lifelink_seen_notification_ids");
+    if (savedValue) {
       try {
-        setRequestsLoading(true);
-        setRequestsError("");
-        const userDataStr = Cookies.get("lifelink_user");
-        const user = userDataStr ? JSON.parse(userDataStr) : null;
-
-        if (!user?._id) {
-          setRequestsLoading(false);
-          return;
+        const parsedValue = JSON.parse(savedValue);
+        if (Array.isArray(parsedValue)) {
+          setSeenNotificationIds(parsedValue.filter((value) => typeof value === "string"));
         }
-
-        if (user?.firstName) {
-          setUserName(user.firstName);
-        }
-
-        const response = await getRequests({ requestedBy: user._id });
-        if (response.success) {
-          setRequests(response.data || []);
-        } else {
-          setRequestsError(response.message || "Failed to load requests");
-        }
-      } catch (err: any) {
-        setRequestsError(err.message || "Failed to load requests");
-      } finally {
-        setRequestsLoading(false);
+      } catch {
+        setSeenNotificationIds([]);
       }
-    };
+    }
 
     loadRequests();
+
+    const intervalId = window.setInterval(() => {
+      loadRequests();
+    }, 10000);
+
+    const handleWindowFocus = () => {
+      loadRequests();
+    };
+
+    window.addEventListener("focus", handleWindowFocus);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", handleWindowFocus);
+    };
   }, []);
 
-
-                {/* Inline Map for Nearby Blood Banks */}
-                <div className="mt-8 rounded-xl overflow-hidden border border-zinc-200">
-                  {/* Only show map if user location is available */}
-                  {location ? (
-                    <iframe
-                      title="Nearby Blood Banks Map"
-                      width="100%"
-                      height="400"
-                      style={{ border: 0 }}
-                      src={`https://www.openstreetmap.org/export/embed.html?bbox=${location.lng-0.05}%2C${location.lat-0.05}%2C${location.lng+0.05}%2C${location.lat+0.05}&layer=mapnik&marker=${location.lat}%2C${location.lng}`}
-                      allowFullScreen
-                    />
-                  ) : (
-                    <div className="p-4 text-zinc-500">Location not available. Enable location to see blood banks near you.</div>
-                  )}
-                </div>
   const handleFulfill = async (requestId: string) => {
     try {
       const response = await updateRequest(requestId, { status: "fulfilled" });
@@ -158,6 +197,15 @@ export default function DashboardPage() {
 
     try {
       await deleteRequest(requestId);
+      setRequests((prev) => prev.filter((item) => item._id !== requestId));
+    } catch (err: any) {
+      setRequestsError(err.message || "Failed to delete request");
+    }
+  };
+
+  const handleDeleteOrgan = async (requestId: string) => {
+    try {
+      await deleteOrganRequest(requestId);
       setRequests((prev) => prev.filter((item) => item._id !== requestId));
     } catch (err: any) {
       setRequestsError(err.message || "Failed to delete request");
@@ -230,46 +278,173 @@ export default function DashboardPage() {
 
   const recentRequests = sortedRequests.slice(0, 5);
 
-  const locationLabel = locationName || "Location not set";
+  const normalizeStatus = (status?: string) => {
+    const lowerStatus = (status || "pending").toLowerCase();
+    return lowerStatus === "accepted" ? "approved" : lowerStatus;
+  };
 
-  const mapsUrl = location
-    ? `https://www.google.com/maps/search/hospitals/@${location.lat},${location.lng},14z`
-    : "https://www.google.com/maps/search/hospitals";
+  const isHospitalDecisionStatus = (status?: string) => {
+    const normalized = normalizeStatus(status);
+    return normalized === "approved" || normalized === "rejected" || normalized === "fulfilled";
+  };
+
+  const notifications = sortedRequests
+    .filter((request) => isHospitalDecisionStatus(request.status))
+    .slice(0, 8)
+    .map((request) => {
+    const rawDate = getRequestDate(request);
+    const timestamp = rawDate ? new Date(rawDate).getTime() : 0;
+    const normalizedStatus = normalizeStatus(request.status);
+    const eventKey = `${request.requestType || "blood"}-${request._id || "unknown"}-${normalizedStatus}-${rawDate || "no-date"}`;
+
+    return {
+      id: eventKey,
+      timestamp,
+      dateLabel: formatDate(rawDate),
+      title: request.requestType === "organ" ? "Organ request update" : "Blood request update",
+      subtitle: `${request.hospitalName || "Unknown hospital"} • ${normalizedStatus}`,
+      status: normalizedStatus,
+    };
+  });
+
+  const unreadCount = notifications.filter(
+    (item) => !seenNotificationIds.includes(item.id)
+  ).length;
+
+  const markNotificationsAsRead = () => {
+    const nextSeenIds = Array.from(new Set([...seenNotificationIds, ...notifications.map((item) => item.id)]));
+    setSeenNotificationIds(nextSeenIds);
+    window.localStorage.setItem("lifelink_seen_notification_ids", JSON.stringify(nextSeenIds));
+  };
 
   return (
     <div className="min-h-screen bg-[radial-gradient(1100px_circle_at_top,#fff1f2,#f8fafc_60%,#e0f2fe)] text-zinc-900">
       {/* Header */}
       <header className="sticky top-0 z-30 border-b border-white/70 bg-white/80 backdrop-blur">
         <div className="mx-auto max-w-6xl px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 overflow-hidden rounded-xl bg-[#ffd7dd] flex items-center justify-center">
-                <div className="relative h-28 w-full">
-                  <Image
-                    src="/lifelink.png"
-                    alt="Logo"
-                    fill
-                    className="object-contain"
-                    priority
-                  />
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 overflow-hidden rounded-xl bg-[#ffd7dd] flex items-center justify-center">
+                  <div className="relative h-28 w-full">
+                    <Image
+                      src="/lifelink.png"
+                      alt="Logo"
+                      fill
+                      className="object-contain"
+                      priority
+                    />
+                  </div>
+                </div>
+                <div className="leading-tight">
+                  <p className="text-base font-semibold tracking-tight">
+                    LifeLink
+                  </p>
                 </div>
               </div>
-              <div className="leading-tight">
-                <p className="text-base font-semibold tracking-tight">
-                  LifeLink
-                </p>
-              </div>
+
+              <nav className="flex max-w-[60vw] items-center gap-2 overflow-x-auto">
+                <Link
+                  href="/dashboard"
+                  className={[
+                    "rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap",
+                    pathname === "/dashboard"
+                      ? "bg-zinc-100 font-semibold text-zinc-900"
+                      : "text-zinc-700 hover:bg-zinc-100",
+                  ].join(" ")}
+                >
+                  Home
+                </Link>
+                <Link
+                  href="/request/select"
+                  className={[
+                    "rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap",
+                    pathname?.startsWith("/request")
+                      ? "bg-zinc-100 font-semibold text-zinc-900"
+                      : "text-zinc-700 hover:bg-zinc-100",
+                  ].join(" ")}
+                >
+                  Request
+                </Link>
+                <Link
+                  href="/user/profile"
+                  className={[
+                    "rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap",
+                    pathname === "/user/profile"
+                      ? "bg-zinc-100 font-semibold text-zinc-900"
+                      : "text-zinc-700 hover:bg-zinc-100",
+                  ].join(" ")}
+                >
+                  Profile
+                </Link>
+              </nav>
             </div>
 
             <div className="flex items-center gap-4">
-              <button
-                type="button"
-                className="relative rounded-xl px-3 py-2 hover:bg-zinc-50"
-                aria-label="Notifications"
-              >
-                <span className="text-2xl">🔔</span>
-                <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500" />
-              </button>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowNotifications((prev) => {
+                      const next = !prev;
+                      if (next) {
+                        markNotificationsAsRead();
+                      }
+                      return next;
+                    });
+                  }}
+                  className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 shadow-sm transition hover:-translate-y-0.5 hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-800"
+                  aria-label="Notifications"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className="h-5 w-5"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5" />
+                    <path d="M9 17a3 3 0 0 0 6 0" />
+                  </svg>
+                  {unreadCount > 0 && (
+                    <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-red-500 px-1.5 text-center text-[10px] font-semibold text-white">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {showNotifications && (
+                  <div className="absolute right-0 z-30 mt-2 w-80 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg">
+                    <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-3">
+                      <p className="text-sm font-semibold text-zinc-900">Notifications</p>
+                      <button
+                        type="button"
+                        className="text-xs font-medium text-zinc-500 hover:text-zinc-700"
+                        onClick={() => setShowNotifications(false)}
+                      >
+                        Close
+                      </button>
+                    </div>
+
+                    <div className="max-h-80 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <p className="px-4 py-6 text-sm text-zinc-500">No notifications yet.</p>
+                      ) : (
+                        notifications.map((item) => (
+                          <div key={item.id} className="border-b border-zinc-100 px-4 py-3 last:border-b-0">
+                            <p className="text-sm font-medium text-zinc-900">{item.title}</p>
+                            <p className="mt-0.5 text-xs text-zinc-600">{item.subtitle}</p>
+                            <p className="mt-1 text-[11px] text-zinc-500">{item.dateLabel}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
               
               <form action={handleLogout}>
                 <button
@@ -286,6 +461,7 @@ export default function DashboardPage() {
 
       {/* Main Content */}
       <main className="mx-auto max-w-6xl px-6 py-8">
+        <div>
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#d4002a]">
@@ -298,12 +474,39 @@ export default function DashboardPage() {
               Track your requests and donation status.
             </p>
           </div>
-          <Link
-            href="/request"
-            className="rounded-lg bg-[#d4002a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#b8002a]"
-          >
-            + New Request
-          </Link>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowRequestMenu((prev) => !prev)}
+              className="rounded-lg bg-[#d4002a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#b8002a]"
+            >
+              + New Request
+            </button>
+            {showRequestMenu && (
+              <div className="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowRequestMenu(false);
+                    router.push("/eligibility?type=blood");
+                  }}
+                  className="w-full px-4 py-3 text-left text-sm text-zinc-700 hover:bg-zinc-50"
+                >
+                  Blood Donation
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowRequestMenu(false);
+                    router.push("/eligibility?type=organ");
+                  }}
+                  className="w-full px-4 py-3 text-left text-sm text-zinc-700 hover:bg-zinc-50"
+                >
+                  Organ Donation
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Banner Image */}
@@ -396,7 +599,7 @@ export default function DashboardPage() {
               <h2 className="text-sm font-semibold text-zinc-900">My Requests</h2>
               <div className="flex items-center gap-3">
                 <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600">
-                  Total {requests.length}
+                  Total {totalRequests}
                 </span>
                 <Link href="/request" className="text-xs font-semibold text-[#d4002a] hover:underline">
                   View all
@@ -420,7 +623,7 @@ export default function DashboardPage() {
                       <th className="px-4 py-3 font-medium">Hospital</th>
                       <th className="px-4 py-3 font-medium">Blood</th>
                       <th className="px-4 py-3 font-medium">Units</th>
-                      <th className="px-4 py-3 font-medium">Scheduled</th>
+                      <th className="px-4 py-3 font-medium">Date & Time</th>
                       <th className="px-4 py-3 font-medium">Status</th>
                       <th className="px-4 py-3 font-medium">Action</th>
                     </tr>
@@ -432,44 +635,71 @@ export default function DashboardPage() {
                           {request.hospitalName || "-"}
                         </td>
                         <td className="px-4 py-3 text-zinc-700">
-                          {request.bloodType}
+                          {request.requestType === "organ" ? "Organ" : request.bloodType}
                         </td>
                         <td className="px-4 py-3 text-zinc-700">
-                          {request.unitsRequested ?? "-"}
+                          {request.requestType === "organ" ? "-" : request.unitsRequested ?? "-"}
                         </td>
                         <td className="px-4 py-3 text-zinc-700">
-                          {request.scheduledAt ? formatDate(request.scheduledAt) : "-"}
+                          {formatDate(getRequestDate(request))}
                         </td>
                         <td className="px-4 py-3">
                           <span
                             className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusClass(
-                              request.status
+                              request.status || "pending"
                             )}`}
                           >
-                            {request.status}
+                            {request.status || "pending"}
                           </span>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <Link
-                              href={`/request/${request._id}`}
-                              className="text-xs font-semibold text-indigo-600 hover:underline"
-                            >
-                              👁️ View
-                            </Link>
-                            <Link
-                              href={`/request?edit=${request._id}`}
-                              className="text-xs font-semibold text-blue-600 hover:underline"
-                            >
-                              ✏️ Edit
-                            </Link>
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(request._id)}
-                              className="text-xs font-semibold text-red-600 hover:underline"
-                            >
-                              🗑️ Delete
-                            </button>
+                            {request.requestType !== "organ" && (
+                              <>
+                                <Link
+                                  href={`/request/${request._id}`}
+                                  className="text-xs font-semibold text-indigo-600 hover:underline"
+                                >
+                                  View
+                                </Link>
+                                <Link
+                                  href={`/request?edit=${request._id}`}
+                                  className="text-xs font-semibold text-blue-600 hover:underline"
+                                >
+                                  Edit
+                                </Link>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDelete(request._id)}
+                                  className="text-xs font-semibold text-red-600 hover:underline"
+                                >
+                                  Delete
+                                </button>
+                              </>
+                            )}
+                            {request.requestType === "organ" && (
+                              <>
+                                <Link
+                                  href={`/request/organ?view=${request._id}`}
+                                  className="text-xs font-semibold text-indigo-600 hover:underline"
+                                >
+                                  View
+                                </Link>
+                                <Link
+                                  href={`/request/organ?edit=${request._id}`}
+                                  className="text-xs font-semibold text-blue-600 hover:underline"
+                                >
+                                  Edit
+                                </Link>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteOrgan(request._id)}
+                                  className="text-xs font-semibold text-red-600 hover:underline"
+                                >
+                                  Delete
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -481,29 +711,6 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Bottom Navigation Links */}
-        <div className="mt-12">
-          <Card className="p-4">
-            <div className="grid grid-cols-3 gap-6">
-              <Link href="/dashboard" className="flex flex-col items-center gap-3 rounded-xl p-4 hover:bg-zinc-50 transition">
-                <span className="text-3xl">🏠</span>
-                <span className="text-sm font-semibold text-zinc-900">Home</span>
-              </Link>
-
-              <Link href="/request" className="flex flex-col items-center gap-3 rounded-xl p-4 hover:bg-zinc-50 transition">
-                <span className="text-3xl">🧾</span>
-                <span className="text-sm font-semibold text-zinc-900">Request</span>
-              </Link>
-
-              <Link
-                href="/user/profile"
-                className="flex flex-col items-center gap-3 rounded-xl p-4 hover:bg-zinc-50 transition"
-              >
-                <span className="text-3xl">👤</span>
-                <span className="text-sm font-semibold text-zinc-900">Profile</span>
-              </Link>
-            </div>
-          </Card>
         </div>
 
         {/* Location Permission Modal */}
