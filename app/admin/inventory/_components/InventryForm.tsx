@@ -3,10 +3,18 @@
 import { useEffect, useState } from "react";
 import SectionHeader from "@/app/_components/SectionHeader";
 import { getHospitals, getHospitalInventory } from "@/lib/api/hospital";
+import { adminGetUsers } from "@/lib/api/user";
 
 interface Hospital {
   _id: string;
   name: string;
+  email?: string;
+}
+
+interface HospitalOption {
+  id: string;
+  name: string;
+  hasInventory: boolean;
 }
 
 interface InventoryItem {
@@ -15,7 +23,7 @@ interface InventoryItem {
 }
 
 export default function AdminInventoryPage() {
-  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [hospitals, setHospitals] = useState<HospitalOption[]>([]);
   const [selectedHospitalId, setSelectedHospitalId] = useState<string>("");
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,14 +36,41 @@ export default function AdminInventoryPage() {
         setLoading(true);
         setError("");
         const response = await getHospitals();
-        if (response.success) {
-          const items = response.data || [];
-          setHospitals(items);
-          if (items.length > 0) {
-            setSelectedHospitalId(items[0]._id);
-          }
-        } else {
+        const usersResponse = await adminGetUsers(1, 200, "hospital");
+
+        if (!response.success) {
           setError(response.message || "Failed to load hospitals");
+          return;
+        }
+
+        const items: Hospital[] = response.data || [];
+        const options: HospitalOption[] = items.map((item) => ({
+          id: item._id,
+          name: item.name,
+          hasInventory: true,
+        }));
+
+        if (usersResponse?.success && Array.isArray(usersResponse.data)) {
+          const hospitalEmails = new Set(
+            items.map((item) => item.email?.toLowerCase()).filter(Boolean)
+          );
+
+          usersResponse.data.forEach((user: any) => {
+            const email = String(user?.email || "").toLowerCase();
+            if (!email || hospitalEmails.has(email)) {
+              return;
+            }
+            options.push({
+              id: `user:${user._id}`,
+              name: `${user.firstName || "Hospital"} (no profile)`,
+              hasInventory: false,
+            });
+          });
+        }
+
+        setHospitals(options);
+        if (options.length > 0) {
+          setSelectedHospitalId(options[0].id);
         }
       } catch (err: any) {
         setError(err.message || "Failed to load hospitals");
@@ -51,6 +86,13 @@ export default function AdminInventoryPage() {
     const loadInventory = async () => {
       if (!selectedHospitalId) {
         setInventory([]);
+        return;
+      }
+
+      const selected = hospitals.find((item) => item.id === selectedHospitalId);
+      if (selected && !selected.hasInventory) {
+        setInventory([]);
+        setError("Hospital profile not found. Create the hospital in Admin > Hospitals to manage inventory.");
         return;
       }
 
@@ -71,7 +113,7 @@ export default function AdminInventoryPage() {
     };
 
     loadInventory();
-  }, [selectedHospitalId]);
+  }, [selectedHospitalId, hospitals]);
 
   if (loading) {
     return (
@@ -105,7 +147,7 @@ export default function AdminInventoryPage() {
           className="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900"
         >
           {hospitals.map((hospital) => (
-            <option key={hospital._id} value={hospital._id}>
+            <option key={hospital.id} value={hospital.id}>
               {hospital.name}
             </option>
           ))}
