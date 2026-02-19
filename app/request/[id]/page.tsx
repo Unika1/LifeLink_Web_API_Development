@@ -11,20 +11,20 @@ export default function RequestDetailPage() {
   const router = useRouter();
   const params = useParams();
   const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
+  const hasId = Boolean(id);
   const [request, setRequest] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!id) {
-      setLoading(false);
       return;
     }
-    setLoading(true);
+    let isMounted = true;
     setError("");
     console.log("Fetching request with ID:", id);
     getRequestById(id)
       .then((res) => {
+        if (!isMounted) return;
         console.log("Response:", res);
         if (res.success && res.data) {
           setRequest(res.data);
@@ -34,11 +34,17 @@ export default function RequestDetailPage() {
         }
       })
       .catch((err) => {
+        if (!isMounted) return;
         console.error("Error:", err);
         setError(err.message || "Failed to fetch request");
       })
-      .finally(() => setLoading(false));
+      .finally(() => {});
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
+
+  const loading = hasId && !request && !error;
 
   const getStatusBadge = (status: string) => {
     if (status === "approved") return "bg-emerald-50 text-emerald-700";
@@ -46,6 +52,12 @@ export default function RequestDetailPage() {
     if (status === "fulfilled") return "bg-indigo-50 text-indigo-700";
     return "bg-amber-50 text-amber-700";
   };
+
+  if (!hasId) return (
+    <div className="min-h-screen bg-[radial-gradient(1100px_circle_at_top,#fff1f2,#f8fafc_60%,#e0f2fe)] flex items-center justify-center">
+      <div className="text-zinc-600">Invalid request ID.</div>
+    </div>
+  );
 
   if (loading) return (
     <div className="min-h-screen bg-[radial-gradient(1100px_circle_at_top,#fff1f2,#f8fafc_60%,#e0f2fe)] flex items-center justify-center">

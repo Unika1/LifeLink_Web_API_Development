@@ -20,7 +20,6 @@ export default function CreateHospitalForm() {
     state: "",
     zipCode: "",
     country: "Nepal",
-    username: "",
     password: "",
     confirmPassword: "",
   });
@@ -63,8 +62,9 @@ export default function CreateHospitalForm() {
           zipCode: form.zipCode,
           country: form.country,
         },
-        username: form.username,
+        username: form.email,
         password: form.password,
+        confirmPassword: form.confirmPassword,
       });
       if (!response.success) {
         setError(response.message || "Failed to create hospital");
@@ -210,20 +210,8 @@ export default function CreateHospitalForm() {
           </div>
 
           <div className="sm:col-span-2 border-t border-zinc-200 pt-6 mt-6">
-            <h3 className="text-sm font-semibold text-zinc-900 mb-4">Hospital Staff Login Credentials</h3>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-zinc-700">Username</label>
-            <input
-              value={form.username}
-              onChange={(event) => handleChange("username", event.target.value)}
-              className="mt-2 w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm text-zinc-900 outline-none focus:border-[#d4002a] focus:ring-4 focus:ring-red-100"
-              placeholder="hospital_user"
-            />
-            {fieldErrors.username && (
-              <p className="mt-1 text-xs text-red-600">{fieldErrors.username}</p>
-            )}
+            <h3 className="text-sm font-semibold text-zinc-900 mb-1">Hospital Staff Login</h3>
+            <p className="text-xs text-zinc-600">Login uses the hospital email address.</p>
           </div>
 
           <div>

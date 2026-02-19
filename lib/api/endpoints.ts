@@ -12,4 +12,11 @@ export const API = {
     UPDATE: (id: string) => `/api/auth/users/${id}`,
     DELETE: (id: string) => `/api/auth/users/${id}`,
   },
+  ORGAN_REQUESTS: {
+    LIST: "/api/organ-requests",
+    GET: (id: string) => `/api/organ-requests/${id}`,
+    CREATE: "/api/organ-requests",
+    UPDATE: (id: string) => `/api/organ-requests/${id}`,
+    DELETE: (id: string) => `/api/organ-requests/${id}`,
+  },
 };

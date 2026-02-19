@@ -109,6 +109,7 @@ export const adminCreateHospital = async (data: {
   };
   username: string;
   password: string;
+  confirmPassword: string;
 }) => {
   try {
     const response = await axios.post("/api/hospitals", data);

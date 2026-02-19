@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import SectionHeader from "@/app/_components/SectionHeader";
 import { useAdminSearch } from "./context/AdminContext";
 import { adminGetUsers } from "@/lib/api/user";
@@ -79,55 +79,40 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Debug: Log search query changes
-  useEffect(() => {
-    console.log("Search query updated:", searchQuery);
-  }, [searchQuery]);
-
   useEffect(() => {
     loadUsers();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadUsers = async () => {
     try {
       setLoading(true);
       setError("");
-      console.log("Loading admin data...");
       const [usersResponse, hospitalsResponse, requestsResponse] = await Promise.all([
         adminGetUsers(),
         getHospitals(),
         getRequests(),
       ]);
 
-      console.log("Users response:", usersResponse);
-      console.log("Hospitals response:", hospitalsResponse);
-      console.log("Requests response:", requestsResponse);
-
       // Handle users response
       if (usersResponse?.success && usersResponse?.data) {
         setUsers(Array.isArray(usersResponse.data) ? usersResponse.data : []);
-        console.log("Users set:", usersResponse.data);
       } else if (Array.isArray(usersResponse)) {
         setUsers(usersResponse);
-        console.log("Users set (direct array):", usersResponse);
       }
 
       // Handle hospitals response
       if (hospitalsResponse?.success && hospitalsResponse?.data) {
         setHospitals(Array.isArray(hospitalsResponse.data) ? hospitalsResponse.data : []);
-        console.log("Hospitals set:", hospitalsResponse.data);
       } else if (Array.isArray(hospitalsResponse)) {
         setHospitals(hospitalsResponse);
-        console.log("Hospitals set (direct array):", hospitalsResponse);
       }
 
       // Handle requests response
       if (requestsResponse?.success && requestsResponse?.data) {
         setRequests(Array.isArray(requestsResponse.data) ? requestsResponse.data : []);
-        console.log("Requests set:", requestsResponse.data);
       } else if (Array.isArray(requestsResponse)) {
         setRequests(requestsResponse);
-        console.log("Requests set (direct array):", requestsResponse);
       }
     } catch (err: any) {
       console.error("Error loading dashboard data:", err);
@@ -150,23 +135,22 @@ export default function AdminDashboard() {
   }));
 
   // Filter users based on search query
-  const filteredUsers = useMemo(() => {
+  const getFilteredUsers = () => {
     if (!searchQuery.trim()) return users;
     
     const query = searchQuery.toLowerCase();
-    const filtered = users.filter(
+    return users.filter(
       (user) =>
         user.firstName.toLowerCase().includes(query) ||
         user.lastName.toLowerCase().includes(query) ||
         user.email.toLowerCase().includes(query) ||
         user.role.toLowerCase().includes(query)
     );
-    console.log(`Filtered users for "${searchQuery}":`, filtered.length, "out of", users.length);
-    return filtered;
-  }, [users, searchQuery]);
+  };
+  const filteredUsers = getFilteredUsers();
 
   // Filter hospitals based on search query
-  const filteredHospitals = useMemo(() => {
+  const getFilteredHospitals = () => {
     if (!searchQuery.trim()) return hospitals;
     
     const query = searchQuery.toLowerCase();
@@ -177,10 +161,11 @@ export default function AdminDashboard() {
         hospital.address?.city?.toLowerCase().includes(query) ||
         hospital.address?.state?.toLowerCase().includes(query)
     );
-  }, [hospitals, searchQuery]);
+  };
+  const filteredHospitals = getFilteredHospitals();
 
   // Filter requests based on search query
-  const filteredRequests = useMemo(() => {
+  const getFilteredRequests = () => {
     if (!searchQuery.trim()) return requests;
     
     const query = searchQuery.toLowerCase();
@@ -189,7 +174,8 @@ export default function AdminDashboard() {
         request.bloodType.toLowerCase().includes(query) ||
         request.status.toLowerCase().includes(query)
     );
-  }, [requests, searchQuery]);
+  };
+  const filteredRequests = getFilteredRequests();
 
   const maxCount = Math.max(...bloodTypeCounts.map((item) => item.value), 1);
   const bloodGroups = bloodTypeCounts.map((item, index) => ({
@@ -212,7 +198,7 @@ export default function AdminDashboard() {
     person: `${user.firstName} ${user.lastName}`,
     email: user.email,
     role: user.role,
-    status: user.role === "admin" ? "Active" : "Pending",
+    status: "Active",
     time: new Date(user.createdAt).toLocaleString(),
   }));
 
@@ -239,7 +225,7 @@ export default function AdminDashboard() {
         <Card>
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-zinc-900">
-              Requests by Blood Group
+              Request Distribution by Blood Group
             </h3>
           </div>
           <div className="flex h-48 items-end justify-between gap-4">
@@ -280,7 +266,7 @@ export default function AdminDashboard() {
             <h3 className="text-sm font-semibold text-zinc-900">Recent Users</h3>
             {searchQuery && (
               <p className="mt-1 text-xs text-zinc-500">
-                Found {filteredUsers.length} user(s) matching "{searchQuery}"
+                Found {filteredUsers.length} user(s) matching &quot;{searchQuery}&quot;
               </p>
             )}
           </div>

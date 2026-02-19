@@ -56,11 +56,6 @@ export default function ProfileForm() {
         const cookieUser = Cookies.get("lifelink_user");
         const parsedCookieUser = cookieUser ? JSON.parse(cookieUser) : null;
 
-        console.log("=== PROFILE FORM DEBUG ===");
-        console.log("User data from cookie:", parsedCookieUser);
-        console.log("All cookies:", Cookies.get());
-        console.log("==========================");
-
         if (parsedCookieUser) {
           setUser(parsedCookieUser as UserData);
           setImageError(false);
@@ -107,10 +102,48 @@ export default function ProfileForm() {
     }
   };
 
+  const handleStartEditing = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setError("");
+    setSuccess("");
+    setImageFile(null);
+    setPreviewImage(null);
+    setFormData({
+      firstName: user?.firstName || "",
+      lastName: user?.lastName || "",
+      email: user?.email || "",
+      phoneNumber: user?.phoneNumber || "",
+      bloodGroup: user?.bloodGroup || "",
+    });
+    setIsEditing(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess("");
+
+    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim()) {
+      setError("Please fill all required fields.");
+      return;
+    }
+
+    // Check if anything actually changed
+    const hasChanges = 
+      formData.firstName !== (user?.firstName || "") ||
+      formData.lastName !== (user?.lastName || "") ||
+      formData.email !== (user?.email || "") ||
+      formData.phoneNumber !== (user?.phoneNumber || "") ||
+      formData.bloodGroup !== (user?.bloodGroup || "") ||
+      imageFile !== null;
+
+    if (!hasChanges) {
+      setIsEditing(false);
+      setImageFile(null);
+      setPreviewImage(null);
+      return;
+    }
 
     try {
       const form = new FormData();
@@ -255,6 +288,10 @@ export default function ProfileForm() {
                       type="file"
                       accept="image/*"
                       onChange={(e) => {
+                        setError("");
+                        setSuccess("");
+                        setImageFile(null);
+                        setPreviewImage(null);
                         setIsEditing(true);
                         handleImageChange(e);
                       }}
@@ -364,8 +401,8 @@ export default function ProfileForm() {
                   {!isEditing ? (
                     <button
                       type="button"
-                      onClick={() => setIsEditing(true)}
-                      className="flex-1 rounded-lg bg-[#d4002a] px-6 py-3 font-medium text-white hover:bg-[#b8002a] transition"
+                      onClick={handleStartEditing}
+                      className="relative z-10 flex-1 rounded-lg bg-[#d4002a] px-6 py-3 font-medium text-white hover:bg-[#b8002a] transition"
                     >
                       Edit Profile
                     </button>
@@ -380,6 +417,8 @@ export default function ProfileForm() {
                       <button
                         type="button"
                         onClick={() => {
+                          setError("");
+                          setSuccess("");
                           setIsEditing(false);
                           setImageFile(null);
                           setPreviewImage(null);

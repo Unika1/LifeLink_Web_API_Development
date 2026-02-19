@@ -20,14 +20,17 @@ axiosInstance.interceptors.request.use(
         delete config.headers["Content-Type"];
       }
     }
-    const token = Cookies.get("lifelink_token");
-    console.log("[axios interceptor] Token from cookie:", token ? "Found" : "Not found");
+    const cookieToken = Cookies.get("lifelink_token");
+    const localToken =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("lifelink_token")
+        : null;
+    const token = cookieToken || localToken;
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log("[axios interceptor] Set Authorization header");
-    } else {
-      console.log("[axios interceptor] No token found in cookies");
     }
+
     return config;
   },
   (error) => {

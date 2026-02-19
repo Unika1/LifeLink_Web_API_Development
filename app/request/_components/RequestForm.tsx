@@ -9,6 +9,7 @@ import Cookies from "js-cookie";
 import {
   createRequest,
   deleteRequest,
+  getRequestById,
   getRequests,
   updateRequest,
 } from "@/lib/api/requests";
@@ -46,6 +47,7 @@ export default function RequestPage() {
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [requestsError, setRequestsError] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const editId = searchParams.get("edit");
 
   const {
     register,
@@ -65,41 +67,68 @@ export default function RequestPage() {
     },
   });
 
+  const applyRequestValues = (data: RequestItem) => {
+    reset({
+      hospitalName: data.hospitalName || "",
+      patientName: data.patientName || "",
+      bloodType: data.bloodType || "",
+      unitsRequested: data.unitsRequested ?? 1,
+      contactPhone: data.contactPhone || "",
+      notes: data.notes || "",
+    });
+  };
+
   // Auto-detect edit mode from ?edit={id} in URL
   useEffect(() => {
-    const editId = searchParams.get("edit");
-    if (editId && editId !== editingId) {
+    if (!editId) {
+      if (editingId) {
+        setEditingId(null);
+        reset();
+      }
+      return;
+    }
+
+    if (editId !== editingId) {
       setEditingId(editId);
-      setSuccess("");
-      setError("");
-      (async () => {
-        setLoading(true);
-        try {
-          const response = await import("@/lib/api/requests").then(mod => mod.getRequestById(editId));
-          if (response.success && response.data) {
-            reset({
-              hospitalName: response.data.hospitalName || "",
-              patientName: response.data.patientName || "",
-              bloodType: response.data.bloodType || "",
-              unitsRequested: response.data.unitsRequested ?? 1,
-              contactPhone: response.data.contactPhone || "",
-              notes: response.data.notes || "",
-            });
-          } else {
-            setError(response.message || "Failed to fetch request data for editing");
-          }
-        } catch (err: any) {
+    }
+
+    setSuccess("");
+    setError("");
+
+    const cachedRequest = requests.find((item) => item._id === editId);
+    if (cachedRequest) {
+      applyRequestValues(cachedRequest);
+    }
+
+    let isActive = true;
+    const loadForEdit = async () => {
+      setLoading(true);
+      try {
+        const response = await getRequestById(editId);
+        if (!isActive) return;
+        if (response.success && response.data) {
+          applyRequestValues(response.data);
+        } else if (!cachedRequest) {
+          setError(response.message || "Failed to fetch request data for editing");
+        }
+      } catch (err: any) {
+        if (!isActive) return;
+        if (!cachedRequest) {
           setError(err.message || "Failed to fetch request data for editing");
-        } finally {
+        }
+      } finally {
+        if (isActive) {
           setLoading(false);
         }
-      })();
-    } else if (!editId && editingId) {
-      // If edit param is removed, reset edit state
-      setEditingId(null);
-      reset();
-    }
-  }, [searchParams, editingId, reset]);
+      }
+    };
+
+    loadForEdit();
+
+    return () => {
+      isActive = false;
+    };
+  }, [editId, editingId, requests, reset]);
 
   useEffect(() => {
     const loadHospitals = async () => {
@@ -118,6 +147,7 @@ export default function RequestPage() {
     };
 
     loadHospitals();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

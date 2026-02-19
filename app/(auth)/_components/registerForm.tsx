@@ -9,19 +9,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, type RegisterData } from "../schema";
 import { handleRegister } from "@/lib/actions/auth-actions";
 
-
-function FieldIcon({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">
-      {children}
-    </span>
-  );
-}
-
 export default function RegisterForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [registerError, setRegisterError] = useState("");
 
   const {
     register,
@@ -40,10 +32,11 @@ export default function RegisterForm() {
   });
 
   const onSubmit = async (values: RegisterData) => {
+    setRegisterError("");
     const res = await handleRegister(values);
 
     if (!res.success) {
-      alert(res.message || "Registration failed");
+      setRegisterError(res.message || "Registration failed");
       return;
     }
 
@@ -65,11 +58,19 @@ export default function RegisterForm() {
         <div className="h-px flex-1 bg-zinc-200" />
       </div>
 
+      {registerError && (
+        <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+          ✕ {registerError}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <div className="relative">
-              <FieldIcon>👤</FieldIcon>
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">
+                👤
+              </span>
               <input
                 type="text"
                 placeholder="First name"
@@ -86,7 +87,9 @@ export default function RegisterForm() {
 
           <div>
             <div className="relative">
-              <FieldIcon>👤</FieldIcon>
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">
+                👤
+              </span>
               <input
                 type="text"
                 placeholder="Last name"
@@ -104,7 +107,9 @@ export default function RegisterForm() {
 
         <div>
           <div className="relative">
-            <FieldIcon>✉️</FieldIcon>
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">
+              ✉️
+            </span>
             <input
               type="email"
               placeholder="Email address"
@@ -119,7 +124,9 @@ export default function RegisterForm() {
 
         <div>
           <div className="relative">
-            <FieldIcon>👤</FieldIcon>
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">
+              👤
+            </span>
             <select
               {...register("role")}
               className="w-full rounded-xl border border-zinc-300 bg-white px-10 py-3 text-sm text-zinc-900 outline-none transition focus:border-[#d4002a] focus:ring-4 focus:ring-red-100 appearance-none cursor-pointer"
@@ -139,7 +146,9 @@ export default function RegisterForm() {
 
         <div>
           <div className="relative">
-            <FieldIcon>🔒</FieldIcon>
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">
+              🔒
+            </span>
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Password"
@@ -162,7 +171,9 @@ export default function RegisterForm() {
 
         <div>
           <div className="relative">
-            <FieldIcon>🔑</FieldIcon>
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">
+              🔑
+            </span>
             <input
               type={showConfirmPassword ? "text" : "password"}
               placeholder="Confirm Password"

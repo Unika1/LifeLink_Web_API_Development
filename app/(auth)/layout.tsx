@@ -19,9 +19,6 @@ export default function AuthLayout({
               height={180}
               priority
             />
-            <span className="rounded-full border border-white/70 bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-700">
-              LifeLink
-            </span>
             <h1 className="text-3xl font-semibold tracking-wide text-zinc-900">
               LifeLink
             </h1>

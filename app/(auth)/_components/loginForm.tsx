@@ -35,6 +35,8 @@ export default function LoginForm() {
     if (res.token && res.data) {
       Cookies.set("lifelink_token", res.token, { path: "/" });
       Cookies.set("lifelink_user", JSON.stringify(res.data), { path: "/" });
+      window.localStorage.setItem("lifelink_token", res.token);
+      window.localStorage.setItem("lifelink_user", JSON.stringify(res.data));
     }
 
     // Redirect based on user role
