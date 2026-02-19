@@ -6,9 +6,9 @@ import { usePathname } from "next/navigation";
 const navItems = [
   { label: "Overview", href: "/admin" },
   { label: "Blood Requests", href: "/admin/requests" },
+  { label: "Organ Requests", href: "/admin/organ-requests" },
   { label: "Hospitals", href: "/admin/hospitals" },
   { label: "Users", href: "/admin/users" },
-  { label: "Blood Inventory", href: "/admin/inventory" },
   { label: "Profile", href: "/admin/profile" },
   { label: "Settings", href: "/admin/settings" },
 ];
@@ -17,14 +17,14 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-[260px] border-r border-zinc-200 bg-white p-5 md:block">
+    <aside className="sticky top-0 hidden h-screen w-65 border-r border-zinc-200 bg-white p-5 md:block">
       <div className="flex items-center gap-2">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#ffd7dd]">
           🩸
         </div>
         <div>
           <p className="text-sm font-semibold text-zinc-900">LifeLink Admin</p>
-          <p className="text-xs text-zinc-500">Hospital Dashboard</p>
+          <p className="text-xs text-zinc-500">Admin Dashboard</p>
         </div>
       </div>
 
