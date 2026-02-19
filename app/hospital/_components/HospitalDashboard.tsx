@@ -1,18 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import SectionHeader from "@/app/_components/SectionHeader";
 import { handleLogout } from "@/lib/actions/auth-actions";
 import {
   getHospitals,
-  getHospitalInventory,
   getDonors,
-  updateHospitalInventory,
-  createHospitalInventory,
-  deleteHospitalInventory,
 } from "@/lib/api/hospital";
 import { getRequests, updateRequest } from "@/lib/api/requests";
+import { getOrganRequests, updateOrganRequest } from "@/lib/api/organ-requests";
 import { getLatestEligibilityReport } from "@/lib/api/eligibility";
 
 const hospitalNames = [
@@ -52,15 +49,11 @@ interface Hospital {
   };
 }
 
-interface InventoryItem {
-  bloodType: string;
-  unitsAvailable: number;
-}
-
-interface BloodRequest {
+interface UnifiedRequest {
   _id: string;
+  requestType: "blood" | "organ";
+  requesterName: string;
   hospitalName?: string;
-  patientName: string;
   bloodType: string;
   unitsRequested?: number;
   status: string;
@@ -70,6 +63,7 @@ interface BloodRequest {
   neededBy?: string;
   scheduledAt?: string;
   notes?: string;
+  reportUrl?: string;
 }
 
 interface Donor {
@@ -81,69 +75,96 @@ interface Donor {
 }
 
 export default function HospitalDashboardPage() {
+  const apiBaseUrl =
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5050";
   const [hospital, setHospital] = useState<Hospital | null>(null);
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [requests, setRequests] = useState<BloodRequest[]>([]);
+  const [requests, setRequests] = useState<UnifiedRequest[]>([]);
+  const [hospitalOptions, setHospitalOptions] = useState<Hospital[]>([]);
   const [donors, setDonors] = useState<Donor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedRequest, setSelectedRequest] = useState<BloodRequest | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<UnifiedRequest | null>(null);
   const [report, setReport] = useState<any>(null);
   const [reportLoading, setReportLoading] = useState(false);
   const [reportError, setReportError] = useState("");
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [seenNotificationIds, setSeenNotificationIds] = useState<string[]>([]);
+  const [notificationTypeFilter, setNotificationTypeFilter] = useState<"all" | "blood" | "organ">("all");
   const [scheduleInput, setScheduleInput] = useState("");
   const [scheduleError, setScheduleError] = useState("");
-  const [selectedHospitalName, setSelectedHospitalName] = useState(
-    hospitalNames[0] || ""
-  );
-  const [inventoryEdits, setInventoryEdits] = useState<Record<string, number>>(
-    {}
-  );
-  const [inventorySaving, setInventorySaving] = useState<Record<string, boolean>>(
-    {}
-  );
-  const [inventoryDeleting, setInventoryDeleting] = useState<Record<string, boolean>>(
-    {}
-  );
-  const [inventoryMessage, setInventoryMessage] = useState("");
-  const [newBloodType, setNewBloodType] = useState("");
-  const [newUnits, setNewUnits] = useState(0);
+  const [selectedHospitalName, setSelectedHospitalName] = useState("");
+  const [requestTypeFilter, setRequestTypeFilter] = useState<"all" | "blood" | "organ">("all");
 
-  const alerts = useMemo(() => {
-    if (!inventory.length) {
-      return ["No inventory data yet"];
-    }
-    const lowStock = inventory.filter((item) => item.unitsAvailable < 5);
-    if (!lowStock.length) {
-      return ["All blood groups are sufficiently stocked"];
-    }
-    return lowStock.map(
-      (item) => `Low stock for ${item.bloodType} (${item.unitsAvailable} units)`
-    );
-  }, [inventory]);
+  const getReportUrl = (path?: string | null) => {
+    if (!path) return null;
+    if (path.startsWith("http")) return path;
+    const normalized = path.startsWith("/") ? path : `/${path}`;
+    return `${apiBaseUrl}${normalized}`;
+  };
 
   useEffect(() => {
+    const savedValue = window.localStorage.getItem("lifelink_hospital_seen_notification_ids");
+    if (savedValue) {
+      try {
+        const parsedValue = JSON.parse(savedValue);
+        if (Array.isArray(parsedValue)) {
+          setSeenNotificationIds(parsedValue.filter((value) => typeof value === "string"));
+        }
+      } catch {
+        setSeenNotificationIds([]);
+      }
+    }
+
     loadHospital();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (!selectedHospitalName) {
-      return;
-    }
+  const normalizeRequests = (
+    requestsResponse: any,
+    organRequestsResponse: any
+  ) => {
+    const bloodRequests = (requestsResponse?.data || []).map((item: any) => ({
+      ...item,
+      requestType: "blood",
+      requesterName: item.patientName || "-",
+      status: item.status || "pending",
+    }));
 
-    const loadRequestsByName = async () => {
-      try {
-        const response = await getRequests({ hospitalName: selectedHospitalName });
-        if (response.success) {
-          setRequests(response.data || []);
-        }
-      } catch (err: any) {
-        setError(err.message || "Failed to load requests");
+    const organRequests = (organRequestsResponse?.data || []).map((item: any) => ({
+      ...item,
+      requestType: "organ",
+      requesterName: item.donorName || "-",
+      bloodType: "Organ",
+      unitsRequested: undefined,
+      status: item.status || "pending",
+    }));
+
+    setRequests([...bloodRequests, ...organRequests]);
+  };
+
+  const fetchRequests = async (hospitalName?: string, hospitalId?: string) => {
+    try {
+      setError("");
+      const bloodResponse = await getRequests({
+        hospitalId: hospitalId || undefined,
+        hospitalName: hospitalName || undefined,
+      });
+      const organResponse = await getOrganRequests({
+        hospitalId: hospitalId || undefined,
+        hospitalName: hospitalName || undefined,
+      });
+
+      if (!bloodResponse.success && !organResponse.success) {
+        setError(bloodResponse.message || organResponse.message || "Failed to load requests");
+        setRequests([]);
+        return;
       }
-    };
 
-    loadRequestsByName();
-  }, [selectedHospitalName]);
+      normalizeRequests(bloodResponse, organResponse);
+    } catch (err: any) {
+      setError(err.message || "Failed to load requests");
+    }
+  };
 
   const loadHospital = async () => {
     try {
@@ -159,6 +180,7 @@ export default function HospitalDashboardPage() {
       }
 
       const hospitals: Hospital[] = hospitalsResponse.data || [];
+      setHospitalOptions(hospitals);
       const matchedHospital = user?.email
         ? hospitals.find((item) => item.email === user.email)
         : hospitals[0];
@@ -171,21 +193,20 @@ export default function HospitalDashboardPage() {
       setHospital(matchedHospital);
 
       if (matchedHospital) {
-        if (hospitalNames.includes(matchedHospital.name)) {
-          setSelectedHospitalName(matchedHospital.name);
-        }
+        setSelectedHospitalName(matchedHospital.name);
 
-        const [inventoryResponse, donorsResponse] = await Promise.all([
-          getHospitalInventory(matchedHospital._id),
+        const [donorsResponse, requestsResponse, organRequestsResponse] = await Promise.all([
           getDonors(),
+          getRequests({ hospitalId: matchedHospital._id, hospitalName: matchedHospital.name }),
+          getOrganRequests({ hospitalId: matchedHospital._id, hospitalName: matchedHospital.name }),
         ]);
-
-        if (inventoryResponse.success) {
-          setInventory(inventoryResponse.data || []);
-        }
 
         if (donorsResponse.success) {
           setDonors(donorsResponse.data || []);
+        }
+
+        if (requestsResponse.success || organRequestsResponse.success) {
+          normalizeRequests(requestsResponse, organRequestsResponse);
         }
       }
     } catch (err: any) {
@@ -195,109 +216,97 @@ export default function HospitalDashboardPage() {
     }
   };
 
-  const totalUnits = inventory.reduce((sum, item) => sum + item.unitsAvailable, 0);
-  const lowStockCount = inventory.filter((item) => item.unitsAvailable < 5).length;
+  const handleHospitalChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const name = event.target.value;
+    setSelectedHospitalName(name);
+    const selected = hospitalOptions.find((item) => item.name === name);
+    fetchRequests(name, selected?._id);
+  };
 
-  const handleInventoryChange = (bloodType: string, value: string) => {
-    const numericValue = Number(value);
-    setInventoryEdits((prev) => ({
-      ...prev,
-      [bloodType]: Number.isNaN(numericValue) ? 0 : Math.max(0, numericValue),
+  const handleHospitalSelectFocus = async () => {
+    // Refresh hospital list when dropdown opens to catch newly created hospitals
+    try {
+      const response = await getHospitals();
+      if (response.success && response.data) {
+        setHospitalOptions(response.data);
+      }
+    } catch (err) {
+      console.error("Failed to refresh hospitals:", err);
+    }
+  };
+
+  const pendingRequestsCount = requests.filter(
+    (request) => request.status === "pending"
+  ).length;
+  const bloodRequestsCount = requests.filter(
+    (request) => request.requestType === "blood"
+  ).length;
+  const organRequestsCount = requests.filter(
+    (request) => request.requestType === "organ"
+  ).length;
+  const approvedRequestsCount = requests.filter(
+    (request) => request.status === "approved"
+  ).length;
+  const fulfilledRequestsCount = requests.filter(
+    (request) => request.status === "fulfilled"
+  ).length;
+  const rejectedRequestsCount = requests.filter(
+    (request) => request.status === "rejected"
+  ).length;
+  const recentDonors = [...donors]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 4);
+  const filteredRequests = requests.filter((request) => {
+    if (requestTypeFilter === "all") {
+      return true;
+    }
+    return request.requestType === requestTypeFilter;
+  });
+
+  const notifications = [...requests]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 8)
+    .map((request) => ({
+      id: `${request.requestType}-${request._id}`,
+      requestType: request.requestType,
+      title: request.requestType === "organ" ? "Organ request update" : "Blood request update",
+      subtitle: `${request.requesterName || "Requester"} • ${request.status || "pending"}`,
+      timeLabel: new Date(request.createdAt).toLocaleString(),
     }));
+
+  const filteredNotifications = notifications.filter((item) => {
+    if (notificationTypeFilter === "all") {
+      return true;
+    }
+    return item.requestType === notificationTypeFilter;
+  });
+
+  const unreadCount = notifications.filter(
+    (item) => !seenNotificationIds.includes(item.id)
+  ).length;
+
+  const markNotificationsAsRead = () => {
+    const nextSeenIds = Array.from(
+      new Set([...seenNotificationIds, ...notifications.map((item) => item.id)])
+    );
+    setSeenNotificationIds(nextSeenIds);
+    window.localStorage.setItem(
+      "lifelink_hospital_seen_notification_ids",
+      JSON.stringify(nextSeenIds)
+    );
   };
 
-  const handleInventorySave = async (bloodType: string) => {
-    if (!hospital?._id) {
-      setInventoryMessage("Hospital profile not found for updates.");
-      return;
-    }
-
-    const unitsAvailable = inventoryEdits[bloodType];
-    setInventoryMessage("");
-    setInventorySaving((prev) => ({ ...prev, [bloodType]: true }));
-
+  const handleStatusUpdate = async (
+    requestId: string,
+    status: string,
+    requestType: "blood" | "organ"
+  ) => {
     try {
-      const response = await updateHospitalInventory(hospital._id, {
-        bloodType,
-        unitsAvailable,
-      });
-      if (response.success) {
-        setInventory((prev) =>
-          prev.map((item) =>
-            item.bloodType === bloodType
-              ? { ...item, unitsAvailable }
-              : item
-          )
-        );
-        setInventoryMessage("Inventory updated.");
-      }
-    } catch (err: any) {
-      setInventoryMessage(err.message || "Failed to update inventory");
-    } finally {
-      setInventorySaving((prev) => ({ ...prev, [bloodType]: false }));
-    }
-  };
-
-  const handleInventoryCreate = async () => {
-    if (!hospital?._id) {
-      setInventoryMessage("Hospital profile not found for updates.");
-      return;
-    }
-
-    if (!newBloodType.trim()) {
-      setInventoryMessage("Please enter a blood type name.");
-      return;
-    }
-
-    setInventoryMessage("");
-
-    try {
-      const response = await createHospitalInventory(hospital._id, {
-        bloodType: newBloodType.trim(),
-        unitsAvailable: Number(newUnits) || 0,
-      });
-
-      if (response.success) {
-        setInventory((prev) => [
-          ...prev,
-          { bloodType: newBloodType.trim(), unitsAvailable: Number(newUnits) || 0 },
-        ]);
-        setNewBloodType("");
-        setNewUnits(0);
-        setInventoryMessage("Blood type added.");
-      }
-    } catch (err: any) {
-      setInventoryMessage(err.message || "Failed to add blood type");
-    }
-  };
-
-  const handleInventoryDelete = async (bloodType: string) => {
-    if (!hospital?._id) {
-      setInventoryMessage("Hospital profile not found for updates.");
-      return;
-    }
-
-    setInventoryMessage("");
-    setInventoryDeleting((prev) => ({ ...prev, [bloodType]: true }));
-
-    try {
-      const response = await deleteHospitalInventory(hospital._id, bloodType);
-      if (response.success) {
-        setInventory((prev) =>
-          prev.filter((item) => item.bloodType !== bloodType)
-        );
-        setInventoryMessage("Blood type removed.");
-      }
-    } catch (err: any) {
-      setInventoryMessage(err.message || "Failed to delete blood type");
-    } finally {
-      setInventoryDeleting((prev) => ({ ...prev, [bloodType]: false }));
-    }
-  };
-
-  const handleStatusUpdate = async (requestId: string, status: string) => {
-    try {
-      const response = await updateRequest(requestId, { status });
+      const validStatus = status as "pending" | "approved" | "rejected" | "fulfilled";
+      const response =
+        requestType === "organ"
+          ? await updateOrganRequest(requestId, { status: validStatus })
+          : await updateRequest(requestId, { status: validStatus });
       if (response.success) {
         setRequests((prev) =>
           prev.map((item) =>
@@ -310,7 +319,7 @@ export default function HospitalDashboardPage() {
     }
   };
 
-  const handleSelectRequest = async (request: BloodRequest) => {
+  const handleSelectRequest = async (request: UnifiedRequest) => {
     setSelectedRequest(request);
     setReport(null);
     setReportError("");
@@ -328,7 +337,7 @@ export default function HospitalDashboardPage() {
       setScheduleInput("");
     }
 
-    if (!request.requestedBy) {
+    if (request.requestType === "organ" || !request.requestedBy) {
       return;
     }
 
@@ -367,7 +376,10 @@ export default function HospitalDashboardPage() {
         updateData.status = "approved";
       }
 
-      const response = await updateRequest(selectedRequest._id, updateData);
+      const response =
+        selectedRequest.requestType === "organ"
+          ? await updateOrganRequest(selectedRequest._id, updateData)
+          : await updateRequest(selectedRequest._id, updateData);
 
       if (response.success) {
         setRequests((prev) =>
@@ -403,8 +415,8 @@ export default function HospitalDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(1200px_circle_at_top,_#eef2ff,_#fff1f2_45%,_#f8fafc_70%)] text-zinc-900">
-      <header className="border-b border-white/70 bg-white/70 backdrop-blur">
+    <div className="min-h-screen bg-[radial-gradient(1200px_circle_at_top,#eef2ff,#fff1f2_45%,#f8fafc_70%)] text-zinc-900">
+      <header className="sticky top-0 z-50 border-b border-white/70 bg-white/85 backdrop-blur">
         <div className="mx-auto max-w-6xl px-6 py-6">
           <div className="flex flex-wrap items-center justify-between gap-6">
             <div>
@@ -422,17 +434,103 @@ export default function HospitalDashboardPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
+              <div className="relative isolate">
+                <button
+                  type="button"
+                  aria-label="Notifications"
+                  onClick={() => {
+                    setShowNotifications((prev) => {
+                      const next = !prev;
+                      if (next) {
+                        markNotificationsAsRead();
+                      }
+                      return next;
+                    });
+                  }}
+                  className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 shadow-sm transition hover:-translate-y-0.5 hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-800"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className="h-5 w-5"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5" />
+                    <path d="M9 17a3 3 0 0 0 6 0" />
+                  </svg>
+                  {unreadCount > 0 && (
+                    <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-[#d4002a] px-1.5 text-center text-[10px] font-semibold text-white shadow-sm">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {showNotifications && (
+                  <div className="absolute right-0 top-full z-120 mt-2 w-80 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xl">
+                    <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-3">
+                      <p className="text-sm font-semibold text-zinc-900">Notifications</p>
+                      <button
+                        type="button"
+                        className="text-xs font-medium text-zinc-500 hover:text-zinc-700"
+                        onClick={() => setShowNotifications(false)}
+                      >
+                        Close
+                      </button>
+                    </div>
+                    <div className="border-b border-zinc-100 px-4 py-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-medium text-zinc-500">Type</span>
+                        <select
+                          value={notificationTypeFilter}
+                          onChange={(event) =>
+                            setNotificationTypeFilter(
+                              event.target.value as "all" | "blood" | "organ"
+                            )
+                          }
+                          className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs text-zinc-700"
+                        >
+                          <option value="all">All</option>
+                          <option value="blood">Blood</option>
+                          <option value="organ">Organ</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {filteredNotifications.length === 0 ? (
+                        <p className="px-4 py-6 text-sm text-zinc-500">No notifications yet.</p>
+                      ) : (
+                        filteredNotifications.map((item) => (
+                          <div key={item.id} className="border-b border-zinc-100 px-4 py-3 last:border-b-0">
+                            <p className="text-sm font-medium text-zinc-900">{item.title}</p>
+                            <p className="mt-0.5 text-xs text-zinc-600">{item.subtitle}</p>
+                            <p className="mt-1 text-[11px] text-zinc-500">{item.timeLabel}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="rounded-full border border-white/70 bg-white/80 px-4 py-2 text-xs font-semibold text-zinc-600">
                 Active Hospital
               </div>
               <select
-                value={selectedHospitalName}
-                onChange={(event) => setSelectedHospitalName(event.target.value)}
+                value={selectedHospitalName || (hospitalOptions.length > 0 ? hospitalOptions[0]?.name : "")}
+                onChange={handleHospitalChange}
+                onFocus={handleHospitalSelectFocus}
                 className="rounded-xl border border-white/70 bg-white/90 px-4 py-2 text-sm text-zinc-700 shadow-sm"
               >
-                {hospitalNames.map((name) => (
-                  <option key={name} value={name}>
-                    {name}
+                {(hospitalOptions.length ? hospitalOptions : hospitalNames).map((item) => (
+                  <option
+                    key={typeof item === "object" ? item._id : item}
+                    value={typeof item === "object" ? item.name : item}
+                  >
+                    {typeof item === "object" ? item.name : item}
                   </option>
                 ))}
               </select>
@@ -454,12 +552,11 @@ export default function HospitalDashboardPage() {
         )}
         {error && <Card className="p-6 text-sm text-red-600">{error}</Card>}
 
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[
             { label: "Active Requests", value: requests.length, accent: "bg-rose-50" },
             { label: "Total Donors", value: donors.length, accent: "bg-sky-50" },
-            { label: "Units Available", value: totalUnits, accent: "bg-emerald-50" },
-            { label: "Low Stock Alerts", value: lowStockCount, accent: "bg-amber-50" },
+            { label: "Pending Requests", value: pendingRequestsCount, accent: "bg-amber-50" },
           ].map((stat) => (
             <Card key={stat.label} className="p-5">
               <div
@@ -497,104 +594,52 @@ export default function HospitalDashboardPage() {
 
             <Card className="p-6">
               <SectionHeader
-                eyebrow="Inventory"
-                title="Blood Units"
-                subtitle="Live stock status by group."
+                eyebrow="Overview"
+                title="Request Pipeline"
+                subtitle="Live status breakdown for this hospital."
               />
-              <div className="mt-4 space-y-3">
-                <div className="grid gap-2 sm:grid-cols-[1.2fr_0.8fr_auto]">
-                  <input
-                    value={newBloodType}
-                    onChange={(event) => setNewBloodType(event.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
-                    placeholder="Blood type name (e.g. O+)"
-                  />
-                  <input
-                    type="number"
-                    min={0}
-                    value={newUnits}
-                    onChange={(event) => setNewUnits(Number(event.target.value))}
-                    className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
-                    placeholder="Units"
-                  />
-                  <button type="button" className="btn-primary px-4 py-2" onClick={handleInventoryCreate}>
-                    Add
-                  </button>
+              <div className="mt-4 space-y-3 text-sm">
+                <div className="flex items-center justify-between rounded-lg border border-zinc-200 bg-white px-3 py-2">
+                  <span className="text-zinc-600">Pending</span>
+                  <span className="font-semibold text-amber-700">{pendingRequestsCount}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-lg border border-zinc-200 bg-white px-3 py-2">
+                  <span className="text-zinc-600">Approved</span>
+                  <span className="font-semibold text-emerald-700">{approvedRequestsCount}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-lg border border-zinc-200 bg-white px-3 py-2">
+                  <span className="text-zinc-600">Fulfilled</span>
+                  <span className="font-semibold text-indigo-700">{fulfilledRequestsCount}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-lg border border-zinc-200 bg-white px-3 py-2">
+                  <span className="text-zinc-600">Rejected</span>
+                  <span className="font-semibold text-red-700">{rejectedRequestsCount}</span>
                 </div>
               </div>
-              <div className="mt-4 grid gap-3">
-                {inventory.length === 0 ? (
-                  <div className="text-sm text-zinc-500">No inventory data</div>
-                ) : (
-                  inventory.map((item) => (
-                    <div
-                      key={item.bloodType}
-                      className={[
-                        "flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-white px-4 py-3",
-                        item.unitsAvailable < 5
-                          ? "border-amber-200 bg-amber-50"
-                          : "border-zinc-200",
-                      ].join(" ")}
-                    >
-                      <span className="text-sm font-medium text-zinc-700">
-                        {item.bloodType}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          min={0}
-                          value={
-                            inventoryEdits[item.bloodType] ?? item.unitsAvailable
-                          }
-                          onChange={(event) =>
-                            handleInventoryChange(
-                              item.bloodType,
-                              event.target.value
-                            )
-                          }
-                          className="w-20 rounded-lg border border-zinc-300 px-2 py-1 text-sm text-zinc-900"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleInventorySave(item.bloodType)}
-                          disabled={inventorySaving[item.bloodType]}
-                          className="btn-secondary px-3 py-1 text-xs"
-                        >
-                          {inventorySaving[item.bloodType] ? "Saving" : "Save"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleInventoryDelete(item.bloodType)}
-                          disabled={inventoryDeleting[item.bloodType]}
-                          className="btn-ghost text-xs text-red-600"
-                        >
-                          {inventoryDeleting[item.bloodType] ? "Deleting" : "Delete"}
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-              {inventoryMessage && (
-                <p className="mt-3 text-xs text-zinc-500">{inventoryMessage}</p>
-              )}
             </Card>
 
             <Card className="p-6">
               <SectionHeader
-                eyebrow="Alerts"
-                title="System Signals"
-                subtitle="Low stock and attention items."
+                eyebrow="Donors"
+                title="Recent Donors"
+                subtitle="Recently registered donors in the system."
               />
               <div className="mt-4 space-y-3">
-                {alerts.map((alert) => (
-                  <div
-                    key={alert}
-                    className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-700"
-                  >
-                    {alert}
-                  </div>
-                ))}
+                {recentDonors.length === 0 ? (
+                  <p className="text-sm text-zinc-500">No donor records yet.</p>
+                ) : (
+                  recentDonors.map((donor) => (
+                    <div
+                      key={donor._id}
+                      className="rounded-lg border border-zinc-200 bg-white px-3 py-2"
+                    >
+                      <p className="text-sm font-semibold text-zinc-900">
+                        {[donor.firstName, donor.lastName].filter(Boolean).join(" ") || "Donor"}
+                      </p>
+                      <p className="text-xs text-zinc-500">{donor.email}</p>
+                    </div>
+                  ))
+                )}
               </div>
             </Card>
           </aside>
@@ -606,9 +651,36 @@ export default function HospitalDashboardPage() {
                 title="Donation Requests"
                 subtitle={`Showing requests for ${selectedHospitalName}`}
               />
-              {requests.length === 0 ? (
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-xs font-semibold">
+                  <span className="rounded-full bg-rose-50 px-3 py-1 text-rose-700">
+                    Blood: {bloodRequestsCount}
+                  </span>
+                  <span className="rounded-full bg-purple-50 px-3 py-1 text-purple-700">
+                    Organ: {organRequestsCount}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label htmlFor="requestTypeFilter" className="text-xs font-medium text-zinc-500">
+                    Filter Type
+                  </label>
+                  <select
+                    id="requestTypeFilter"
+                    value={requestTypeFilter}
+                    onChange={(event) =>
+                      setRequestTypeFilter(event.target.value as "all" | "blood" | "organ")
+                    }
+                    className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700"
+                  >
+                    <option value="all">All</option>
+                    <option value="blood">Blood</option>
+                    <option value="organ">Organ</option>
+                  </select>
+                </div>
+              </div>
+              {filteredRequests.length === 0 ? (
                 <div className="mt-4 rounded-xl border border-zinc-100 bg-white p-4 text-sm text-zinc-500">
-                  No request data yet for {selectedHospitalName || "selected hospital"}
+                  No {requestTypeFilter === "all" ? "request" : requestTypeFilter} request data yet for {selectedHospitalName || "selected hospital"}
                 </div>
               ) : (
                 <div className="mt-4 overflow-hidden rounded-xl border border-zinc-100 bg-white">
@@ -624,24 +696,24 @@ export default function HospitalDashboardPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-100">
-                      {requests.slice(0, 8).map((request) => (
+                      {filteredRequests.slice(0, 8).map((request) => (
                         <tr key={request._id}>
                           <td className="px-4 py-3 text-zinc-700">
-                            {request.patientName}
+                            {request.requesterName}
                           </td>
                           <td className="px-4 py-3 text-zinc-700">
-                            {request.bloodType}
+                            {request.requestType === "organ" ? "Organ" : request.bloodType}
                           </td>
                           <td className="px-4 py-3 text-zinc-700">
-                            {request.unitsRequested ?? "-"}
+                            {request.requestType === "organ" ? "-" : request.unitsRequested ?? "-"}
                           </td>
                           <td className="px-4 py-3">
                             <span
                               className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusBadge(
-                                request.status
+                                request.status || "pending"
                               )}`}
                             >
-                              {request.status}
+                              {request.status || "pending"}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-zinc-500">
@@ -658,7 +730,7 @@ export default function HospitalDashboardPage() {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handleStatusUpdate(request._id, "rejected")}
+                                onClick={() => handleStatusUpdate(request._id, "rejected", request.requestType)}
                                 disabled={request.status !== "pending"}
                                 className="btn-ghost text-xs text-red-600 disabled:opacity-40"
                               >
@@ -689,34 +761,28 @@ export default function HospitalDashboardPage() {
                   <div>
                     <span className="text-xs uppercase tracking-wide text-zinc-400">Requester</span>
                     <div className="font-semibold text-zinc-900">
-                      {selectedRequest.patientName}
+                      {selectedRequest.requesterName}
                     </div>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
                       <span className="text-xs uppercase tracking-wide text-zinc-400">Blood Type</span>
                       <div className="font-semibold text-zinc-900">
-                        {selectedRequest.bloodType}
+                        {selectedRequest.requestType === "organ" ? "Organ" : selectedRequest.bloodType}
                       </div>
                     </div>
                     <div>
                       <span className="text-xs uppercase tracking-wide text-zinc-400">Units</span>
                       <div className="font-semibold text-zinc-900">
-                        {selectedRequest.unitsRequested ?? "-"}
+                        {selectedRequest.requestType === "organ"
+                          ? "-"
+                          : selectedRequest.unitsRequested ?? "-"}
                       </div>
                     </div>
                     <div>
                       <span className="text-xs uppercase tracking-wide text-zinc-400">Contact</span>
                       <div className="font-semibold text-zinc-900">
                         {selectedRequest.contactPhone || "-"}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-xs uppercase tracking-wide text-zinc-400">Needed By</span>
-                      <div className="font-semibold text-zinc-900">
-                        {selectedRequest.neededBy
-                          ? new Date(selectedRequest.neededBy).toLocaleDateString()
-                          : "-"}
                       </div>
                     </div>
                   </div>
@@ -739,7 +805,10 @@ export default function HospitalDashboardPage() {
                       <button
                         type="button"
                         onClick={handleApproveWithSchedule}
-                        disabled={selectedRequest.status !== "pending" && selectedRequest.status !== "approved"}
+                        disabled={
+                          !scheduleInput ||
+                          (selectedRequest.status !== "pending" && selectedRequest.status !== "approved")
+                        }
                         className="btn-primary bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200/60 disabled:opacity-40"
                       >
                         {selectedRequest.status === "approved" ? "Update Schedule" : "Approve & Schedule"}
@@ -751,6 +820,25 @@ export default function HospitalDashboardPage() {
                       )}
                     </div>
                   </div>
+                  {selectedRequest.requestType === "organ" && (
+                    <div>
+                      <span className="text-xs uppercase tracking-wide text-zinc-400">Health Report</span>
+                      <div className="mt-1 rounded-lg bg-zinc-50 px-3 py-2 text-zinc-700">
+                        {selectedRequest.reportUrl ? (
+                          <a
+                            href={getReportUrl(selectedRequest.reportUrl) || "#"}
+                            className="text-sm text-blue-600 hover:underline"
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            View report
+                          </a>
+                        ) : (
+                          "No report attached"
+                        )}
+                      </div>
+                    </div>
+                  )}
                   <div>
                     <span className="text-xs uppercase tracking-wide text-zinc-400">Notes</span>
                     <div className="mt-1 rounded-lg bg-zinc-50 px-3 py-2 text-zinc-700">
@@ -758,28 +846,30 @@ export default function HospitalDashboardPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <span className="text-xs uppercase tracking-wide text-zinc-400">Eligibility Report</span>
-                    <div className="mt-2 rounded-lg border border-zinc-100 bg-white p-3">
-                      {reportLoading && (
-                        <div className="text-xs text-zinc-500">Loading report...</div>
-                      )}
-                      {!reportLoading && reportError && (
-                        <div className="text-xs text-red-600">{reportError}</div>
-                      )}
-                      {!reportLoading && !reportError && report && (
-                        <div className="space-y-1 text-xs text-zinc-600">
-                          <div>Age: {report.age}</div>
-                          <div>Weight: {report.weight} kg</div>
-                          <div>Gender: {report.gender}</div>
-                          <div>Total Donations: {report.totalDonationsCount ?? 0}</div>
-                        </div>
-                      )}
-                      {!reportLoading && !reportError && !report && (
-                        <div className="text-xs text-zinc-500">No report available</div>
-                      )}
+                  {selectedRequest.requestType === "blood" && (
+                    <div>
+                      <span className="text-xs uppercase tracking-wide text-zinc-400">Eligibility Report</span>
+                      <div className="mt-2 rounded-lg border border-zinc-100 bg-white p-3">
+                        {reportLoading && (
+                          <div className="text-xs text-zinc-500">Loading report...</div>
+                        )}
+                        {!reportLoading && reportError && (
+                          <div className="text-xs text-red-600">{reportError}</div>
+                        )}
+                        {!reportLoading && !reportError && report && (
+                          <div className="space-y-1 text-xs text-zinc-600">
+                            <div>Age: {report.age}</div>
+                            <div>Weight: {report.weight} kg</div>
+                            <div>Gender: {report.gender}</div>
+                            <div>Total Donations: {report.totalDonationsCount ?? 0}</div>
+                          </div>
+                        )}
+                        {!reportLoading && !reportError && !report && (
+                          <div className="text-xs text-zinc-500">No report available</div>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
             </Card>

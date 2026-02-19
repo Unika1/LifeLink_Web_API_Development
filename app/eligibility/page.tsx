@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import SectionHeader from "@/app/_components/SectionHeader";
 import { checkEligibility, submitEligibilityQuestionnaire } from "@/lib/api/eligibility";
 
@@ -9,6 +9,8 @@ const genders = ["male", "female", "other"] as const;
 
 export default function EligibilityPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestType = searchParams.get("type") === "organ" ? "organ" : "blood";
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -87,7 +89,8 @@ export default function EligibilityPage() {
       const eligibility = await checkEligibility();
       if (eligibility?.data?.eligible) {
         setSuccess("You are eligible. Redirecting to request form...");
-        setTimeout(() => router.push("/request"), 800);
+        const targetRoute = requestType === "organ" ? "/request/organ" : "/request";
+        setTimeout(() => router.push(targetRoute), 800);
         return;
       }
 
@@ -105,7 +108,11 @@ export default function EligibilityPage() {
         <SectionHeader
           eyebrow="Eligibility"
           title="Eligibility Questionnaire"
-          subtitle="Please complete this before requesting blood."
+          subtitle={
+            requestType === "organ"
+              ? "Please complete this before requesting organ donation."
+              : "Please complete this before requesting blood."
+          }
         />
 
         <form

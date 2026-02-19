@@ -129,31 +129,43 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          {[
-            {
-              title: "Health information, when it matters",
-              desc: "LifeLink helps users keep important health details organised and accessible, especially in situations where quick access can make a real difference."
-            },
-            {
-              title: "Designed for clarity and ease",
-              desc: "The platform focuses on a clean and simple experience so users can register, sign in, and navigate without confusion or unnecessary steps.",
-            },
-            {
-              title: "Scalable authentication flow",
-              desc: "LifeLink implements a complete authentication journey—from registration to dashboard access—designed to evolve into a secure, role-based system in later development phases.",
-            },
-          ].map((f) => (
-            <div
-              key={f.title}
-              className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm"
-            >
-              <div className="mb-4 h-10 w-10 rounded-xl bg-[#b8dfe2] flex items-center justify-center">
-                ✓
-              </div>
-              <h3 className="text-base font-semibold">{f.title}</h3>
-              <p className="mt-2 text-sm text-zinc-600">{f.desc}</p>
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <div className="mb-4 h-10 w-10 rounded-xl bg-[#b8dfe2] flex items-center justify-center">
+              ✓
             </div>
-          ))}
+            <h3 className="text-base font-semibold">
+              Health information, when it matters
+            </h3>
+            <p className="mt-2 text-sm text-zinc-600">
+              LifeLink helps users keep important health details organised and
+              accessible, especially in situations where quick access can make
+              a real difference.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <div className="mb-4 h-10 w-10 rounded-xl bg-[#b8dfe2] flex items-center justify-center">
+              ✓
+            </div>
+            <h3 className="text-base font-semibold">Designed for clarity and ease</h3>
+            <p className="mt-2 text-sm text-zinc-600">
+              The platform focuses on a clean and simple experience so users
+              can register, sign in, and navigate without confusion or
+              unnecessary steps.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <div className="mb-4 h-10 w-10 rounded-xl bg-[#b8dfe2] flex items-center justify-center">
+              ✓
+            </div>
+            <h3 className="text-base font-semibold">Scalable authentication flow</h3>
+            <p className="mt-2 text-sm text-zinc-600">
+              LifeLink implements a complete authentication journey—from
+              registration to dashboard access—designed to evolve into a
+              secure, role-based system in later development phases.
+            </p>
+          </div>
         </div>
       </section>
 
