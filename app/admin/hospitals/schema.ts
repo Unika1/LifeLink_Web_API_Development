@@ -9,7 +9,6 @@ export const hospitalSchema = z.object({
   state: z.string().min(1, "State is required"),
   zipCode: z.string().min(1, "Zip code is required"),
   country: z.string().min(1, "Country is required"),
-  username: z.string().min(3, "Username must be at least 3 characters"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string().min(6, "Confirm password must be at least 6 characters"),
   isActive: z.boolean().optional(),
