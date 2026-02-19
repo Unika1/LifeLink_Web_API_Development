@@ -82,7 +82,7 @@ export default function CreateUserForm() {
       form.append("confirmPassword", formData.confirmPassword);
       form.append("role", formData.role);
       if (formData.phone) {
-        form.append("phone", formData.phone);
+        form.append("phoneNumber", formData.phone);
       }
       if (imageFile) {
         form.append("image", imageFile);
@@ -110,8 +110,8 @@ export default function CreateUserForm() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-zinc-900">Create New User</h1>
-          <p className="mt-1 text-zinc-600">Add a new donor, hospital, or admin to the system</p>
+          <h1 className="text-3xl font-bold text-zinc-900">Add Donor</h1>
+          <p className="mt-1 text-zinc-600">Create a donor account.</p>
         </div>
         <Link
           href="/admin/users"
@@ -141,7 +141,7 @@ export default function CreateUserForm() {
           {/* Image Upload */}
           <div>
             <label className="block text-sm font-semibold text-zinc-900 mb-2">
-              Profile Image
+              Profile Image (Optional)
             </label>
             <div className="flex gap-4 items-center">
               {imagePreview && (
@@ -160,7 +160,7 @@ export default function CreateUserForm() {
                   onChange={handleImageChange}
                   className="w-full cursor-pointer rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-[#d4002a] file:px-3 file:py-1.5 file:text-sm file:text-white file:hover:bg-[#b8002a]"
                 />
-                <p className="mt-1 text-xs text-zinc-500">PNG, JPG, GIF up to 5MB</p>
+                <p className="mt-1 text-xs text-zinc-500">PNG or JPG up to 5MB</p>
               </div>
             </div>
           </div>
@@ -176,7 +176,7 @@ export default function CreateUserForm() {
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleInputChange}
-                placeholder="John"
+                placeholder="First name"
                 className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-zinc-900 placeholder-zinc-500 focus:border-[#d4002a] focus:outline-none"
               />
             </div>
@@ -190,7 +190,7 @@ export default function CreateUserForm() {
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleInputChange}
-                placeholder="Doe"
+                placeholder="Last name"
                 className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-zinc-900 placeholder-zinc-500 focus:border-[#d4002a] focus:outline-none"
               />
             </div>
@@ -201,12 +201,12 @@ export default function CreateUserForm() {
             <label className="block text-sm font-semibold text-zinc-900 mb-2">
               Email *
             </label>
-            <input
+              <input
               type="email"
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              placeholder="john@example.com"
+                placeholder="name@example.com"
               className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-zinc-900 placeholder-zinc-500 focus:border-[#d4002a] focus:outline-none"
             />
           </div>
@@ -222,7 +222,7 @@ export default function CreateUserForm() {
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                placeholder="At least 6 characters"
+                placeholder="Password"
                 className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-zinc-900 placeholder-zinc-500 focus:border-[#d4002a] focus:outline-none"
               />
             </div>
@@ -242,25 +242,6 @@ export default function CreateUserForm() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-zinc-900 mb-2">
-              Role *
-            </label>
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleInputChange}
-              className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-zinc-900 focus:border-[#d4002a] focus:outline-none"
-            >
-              <option value="donor">Donor</option>
-              <option value="hospital">Hospital</option>
-              <option value="admin">Admin</option>
-            </select>
-            <p className="mt-1 text-xs text-zinc-600">
-              Choose the user's role in the system.
-            </p>
-          </div>
-
           {/* Phone Field (Optional) */}
           <div>
             <label className="block text-sm font-semibold text-zinc-900 mb-2">
@@ -271,7 +252,7 @@ export default function CreateUserForm() {
               name="phone"
               value={formData.phone}
               onChange={handleInputChange}
-              placeholder="+1 (555) 123-4567"
+              placeholder="Phone number"
               className="w-full rounded-lg border border-zinc-300 bg-white px-4 py-2 text-zinc-900 placeholder-zinc-500 focus:border-[#d4002a] focus:outline-none"
             />
           </div>
