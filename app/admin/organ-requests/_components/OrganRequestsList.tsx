@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import SectionHeader from "@/app/_components/SectionHeader";
 import { getOrganRequests, updateOrganRequest } from "@/lib/api/organ-requests";
+import { useAdminSearch } from "../../context/AdminContext";
 
 interface OrganRequestItem {
   _id: string;
@@ -19,6 +20,7 @@ interface OrganRequestItem {
 const statusOptions = ["pending", "approved", "rejected", "fulfilled"];
 
 export default function OrganRequestsList() {
+  const { searchQuery } = useAdminSearch();
   const [requests, setRequests] = useState<OrganRequestItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -92,9 +94,23 @@ export default function OrganRequestsList() {
     });
   };
 
-  const filteredRequests = filterStatus === "all" 
-    ? requests 
-    : requests.filter(req => req.status === filterStatus);
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredByStatus = filterStatus === "all"
+    ? requests
+    : requests.filter((req) => req.status === filterStatus);
+
+  const filteredRequests = normalizedQuery
+    ? filteredByStatus.filter((request) =>
+        [
+          request.donorName,
+          request.hospitalName,
+          request.status,
+          request.notes,
+        ]
+          .filter((value): value is string => Boolean(value))
+          .some((value) => value.toLowerCase().includes(normalizedQuery))
+      )
+    : filteredByStatus;
 
   if (loading) {
     return (

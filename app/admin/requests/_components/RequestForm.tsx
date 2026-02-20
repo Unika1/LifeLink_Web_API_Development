@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import SectionHeader from "@/app/_components/SectionHeader";
 import { getRequests, updateRequest } from "@/lib/api/requests";
+import { useAdminSearch } from "../../context/AdminContext";
 
 interface RequestItem {
   _id: string;
@@ -18,7 +19,22 @@ interface RequestItem {
 
 const statusOptions = ["pending", "approved", "rejected", "fulfilled"];
 
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case "approved":
+      return "bg-green-100 text-green-700 border-green-200";
+    case "rejected":
+      return "bg-red-100 text-red-700 border-red-200";
+    case "fulfilled":
+      return "bg-blue-100 text-blue-700 border-blue-200";
+    case "pending":
+    default:
+      return "bg-yellow-100 text-yellow-700 border-yellow-200";
+  }
+};
+
 export default function AdminRequestsPage() {
+  const { searchQuery } = useAdminSearch();
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -62,6 +78,21 @@ export default function AdminRequestsPage() {
       setUpdating((prev) => ({ ...prev, [id]: false }));
     }
   };
+
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredRequests = normalizedQuery
+    ? requests.filter((request) =>
+        [
+          request.patientName,
+          request.hospitalName,
+          request.bloodType,
+          request.status,
+          request.contactPhone,
+        ]
+          .filter((value): value is string => Boolean(value))
+          .some((value) => value.toLowerCase().includes(normalizedQuery))
+      )
+    : requests;
 
   if (loading) {
     return (
@@ -111,17 +142,17 @@ export default function AdminRequestsPage() {
               </tr>
             </thead>
             <tbody>
-              {requests.length === 0 ? (
+              {filteredRequests.length === 0 ? (
                 <tr>
                   <td
                     colSpan={6}
                     className="px-6 py-12 text-center text-zinc-600"
                   >
-                    No requests found
+                    {normalizedQuery ? "No requests match this search" : "No requests found"}
                   </td>
                 </tr>
               ) : (
-                requests.map((request) => (
+                filteredRequests.map((request) => (
                   <tr
                     key={request._id}
                     className="border-b border-zinc-100 transition hover:bg-zinc-50"
@@ -149,7 +180,9 @@ export default function AdminRequestsPage() {
                         onChange={(event) =>
                           handleStatusChange(request._id, event.target.value)
                         }
-                        className="rounded-lg border border-zinc-200 bg-white px-3 py-1 text-sm text-zinc-700"
+                        className={`rounded-lg border px-3 py-1.5 text-xs font-semibold uppercase transition focus:outline-none focus:ring-2 focus:ring-zinc-300 disabled:opacity-50 ${getStatusColor(
+                          request.status
+                        )}`}
                         disabled={updating[request._id]}
                       >
                         {statusOptions.map((status) => (

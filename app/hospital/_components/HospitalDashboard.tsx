@@ -74,6 +74,12 @@ interface Donor {
   createdAt: string;
 }
 
+interface RejectTarget {
+  id: string;
+  type: "blood" | "organ";
+  name: string;
+}
+
 export default function HospitalDashboardPage() {
   const apiBaseUrl =
     process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5050";
@@ -94,6 +100,7 @@ export default function HospitalDashboardPage() {
   const [scheduleError, setScheduleError] = useState("");
   const [selectedHospitalName, setSelectedHospitalName] = useState("");
   const [requestTypeFilter, setRequestTypeFilter] = useState<"all" | "blood" | "organ">("all");
+  const [rejectConfirm, setRejectConfirm] = useState<RejectTarget | null>(null);
 
   const getReportUrl = (path?: string | null) => {
     if (!path) return null;
@@ -730,7 +737,13 @@ export default function HospitalDashboardPage() {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handleStatusUpdate(request._id, "rejected", request.requestType)}
+                                onClick={() =>
+                                  setRejectConfirm({
+                                    id: request._id,
+                                    type: request.requestType,
+                                    name: request.requesterName,
+                                  })
+                                }
                                 disabled={request.status !== "pending"}
                                 className="btn-ghost text-xs text-red-600 disabled:opacity-40"
                               >
@@ -876,6 +889,36 @@ export default function HospitalDashboardPage() {
           </div>
         </section>
       </main>
+
+      {rejectConfirm && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-md rounded-xl border border-zinc-200 bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-zinc-900">Reject Request?</h3>
+            <p className="mt-2 text-sm text-zinc-600">
+              Are you sure you want to reject {rejectConfirm.name || "this request"}? This will update its status to rejected.
+            </p>
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={async () => {
+                  await handleStatusUpdate(rejectConfirm.id, "rejected", rejectConfirm.type);
+                  setRejectConfirm(null);
+                }}
+                className="flex-1 rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700 transition"
+              >
+                Reject
+              </button>
+              <button
+                type="button"
+                onClick={() => setRejectConfirm(null)}
+                className="flex-1 rounded-lg border border-zinc-300 px-4 py-2 font-semibold text-zinc-900 hover:bg-zinc-50 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { adminDeleteHospital, getHospitals } from "@/lib/api/hospital";
+import { useAdminSearch } from "../../context/AdminContext";
 
 interface Hospital {
   _id: string;
@@ -21,6 +22,7 @@ interface Hospital {
 }
 
 export default function HospitalsList() {
+  const { searchQuery } = useAdminSearch();
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -54,6 +56,22 @@ export default function HospitalsList() {
       setError(err.message || "Failed to delete hospital");
     }
   };
+
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredHospitals = normalizedQuery
+    ? hospitals.filter((hospital) =>
+        [
+          hospital.name,
+          hospital.email,
+          hospital.phoneNumber,
+          hospital.address?.city,
+          hospital.address?.state,
+          hospital.address?.street,
+        ]
+          .filter(Boolean)
+          .some((value) => value.toLowerCase().includes(normalizedQuery))
+      )
+    : hospitals;
 
   if (loading) {
     return (
@@ -109,17 +127,17 @@ export default function HospitalsList() {
               </tr>
             </thead>
             <tbody>
-              {hospitals.length === 0 ? (
+              {filteredHospitals.length === 0 ? (
                 <tr>
                   <td
                     colSpan={5}
                     className="px-6 py-12 text-center text-zinc-600"
                   >
-                    No hospitals found
+                    {normalizedQuery ? "No hospitals match this search" : "No hospitals found"}
                   </td>
                 </tr>
               ) : (
-                hospitals.map((hospital) => {
+                filteredHospitals.map((hospital) => {
                   const hospitalId = (hospital as any)._id || (hospital as any).id;
                   return (
                   <tr
@@ -175,25 +193,6 @@ export default function HospitalsList() {
                           Delete
                         </button>
                       </div>
-                      {deleteConfirm && deleteConfirm === hospitalId && (
-                        <div className="mt-3 rounded-lg border border-red-100 bg-red-50 p-3 text-xs text-red-700">
-                          <p>Delete this hospital?</p>
-                          <div className="mt-2 flex gap-2">
-                            <button
-                              onClick={() => handleDelete(hospitalId)}
-                              className="rounded-md bg-red-600 px-3 py-1 text-white"
-                            >
-                              Yes
-                            </button>
-                            <button
-                              onClick={() => setDeleteConfirm(null)}
-                              className="rounded-md border border-red-200 px-3 py-1 text-red-700"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      )}
                     </td>
                   </tr>
                 );
@@ -203,6 +202,31 @@ export default function HospitalsList() {
           </table>
         </div>
       </div>
+
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-full max-w-md rounded-xl border border-zinc-200 bg-white p-6">
+            <h3 className="text-lg font-semibold text-zinc-900">Delete Hospital?</h3>
+            <p className="mt-2 text-zinc-600">
+              Are you sure you want to delete this hospital? This action cannot be undone.
+            </p>
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => handleDelete(deleteConfirm)}
+                className="flex-1 rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700 transition"
+              >
+                Delete
+              </button>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 rounded-lg border border-zinc-300 px-4 py-2 font-semibold text-zinc-900 hover:bg-zinc-50 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

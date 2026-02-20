@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import SectionHeader from "@/app/_components/SectionHeader";
 import { adminGetUsers, adminDeleteUser } from "@/lib/api/user";
+import { useAdminSearch } from "../context/AdminContext";
 
 interface User {
   _id: string;
@@ -22,6 +23,7 @@ interface PaginationData {
 }
 
 export default function AdminUsersPage() {
+  const { searchQuery } = useAdminSearch();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -70,6 +72,21 @@ export default function AdminUsersPage() {
     }
   };
 
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredUsers = normalizedQuery
+    ? users.filter((user) =>
+        [
+          user.firstName,
+          user.lastName,
+          user.email,
+          user.role,
+          `${user.firstName} ${user.lastName}`,
+        ]
+          .filter(Boolean)
+          .some((value) => value.toLowerCase().includes(normalizedQuery))
+      )
+    : users;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -85,7 +102,9 @@ export default function AdminUsersPage() {
         title="Users"
         subtitle={
           pagination
-            ? `Showing ${users.length} of ${pagination.total} users`
+            ? normalizedQuery
+              ? `Showing ${filteredUsers.length} matching users on this page`
+              : `Showing ${users.length} of ${pagination.total} users`
             : "Manage registered users"
         }
         action={
@@ -146,14 +165,14 @@ export default function AdminUsersPage() {
               </tr>
             </thead>
             <tbody>
-              {users.length === 0 ? (
+              {filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-zinc-600">
-                    No users found
+                    {normalizedQuery ? "No users match this search" : "No users found"}
                   </td>
                 </tr>
               ) : (
-                users.map((user) => (
+                filteredUsers.map((user) => (
                   <tr
                     key={user._id}
                     className="border-b border-zinc-100 hover:bg-zinc-50 transition"
@@ -209,7 +228,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Pagination Controls */}
-      {pagination && pagination.totalPages > 1 && (
+      {pagination && pagination.totalPages > 1 && !normalizedQuery && (
         <div className="rounded-xl border border-zinc-200 bg-white p-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-zinc-600">

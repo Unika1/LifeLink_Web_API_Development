@@ -41,6 +41,10 @@ export default function DashboardPage() {
   const [showRequestMenu, setShowRequestMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [seenNotificationIds, setSeenNotificationIds] = useState<string[]>([]);
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    id: string;
+    type: "blood" | "organ";
+  } | null>(null);
   // Show location permission modal if location is not set and user clicks hospital/blood bank
   const handleEnableLocation = () => {
     setShowLocationPrompt(true);
@@ -191,13 +195,10 @@ export default function DashboardPage() {
   };
 
   const handleDelete = async (requestId: string) => {
-    if (!confirm("Are you sure you want to delete this request?")) {
-      return;
-    }
-
     try {
       await deleteRequest(requestId);
       setRequests((prev) => prev.filter((item) => item._id !== requestId));
+      setDeleteConfirm(null);
     } catch (err: any) {
       setRequestsError(err.message || "Failed to delete request");
     }
@@ -207,6 +208,7 @@ export default function DashboardPage() {
     try {
       await deleteOrganRequest(requestId);
       setRequests((prev) => prev.filter((item) => item._id !== requestId));
+      setDeleteConfirm(null);
     } catch (err: any) {
       setRequestsError(err.message || "Failed to delete request");
     }
@@ -670,7 +672,9 @@ export default function DashboardPage() {
                                 </Link>
                                 <button
                                   type="button"
-                                  onClick={() => handleDelete(request._id)}
+                                  onClick={() =>
+                                    setDeleteConfirm({ id: request._id, type: "blood" })
+                                  }
                                   className="text-xs font-semibold text-red-600 hover:underline"
                                 >
                                   Delete
@@ -693,7 +697,9 @@ export default function DashboardPage() {
                                 </Link>
                                 <button
                                   type="button"
-                                  onClick={() => handleDeleteOrgan(request._id)}
+                                  onClick={() =>
+                                    setDeleteConfirm({ id: request._id, type: "organ" })
+                                  }
                                   className="text-xs font-semibold text-red-600 hover:underline"
                                 >
                                   Delete
@@ -712,6 +718,37 @@ export default function DashboardPage() {
         </div>
 
         </div>
+
+        {deleteConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <Card className="w-full max-w-md p-6">
+              <h3 className="text-lg font-semibold text-zinc-900">Delete Request?</h3>
+              <p className="mt-2 text-sm text-zinc-600">
+                Are you sure you want to delete this request? This action cannot be undone.
+              </p>
+              <div className="mt-6 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() =>
+                    deleteConfirm.type === "organ"
+                      ? handleDeleteOrgan(deleteConfirm.id)
+                      : handleDelete(deleteConfirm.id)
+                  }
+                  className="flex-1 rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700 transition"
+                >
+                  Delete
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirm(null)}
+                  className="flex-1 rounded-lg border border-zinc-300 px-4 py-2 font-semibold text-zinc-900 hover:bg-zinc-50 transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </Card>
+          </div>
+        )}
 
         {/* Location Permission Modal */}
         {showLocationPrompt && (

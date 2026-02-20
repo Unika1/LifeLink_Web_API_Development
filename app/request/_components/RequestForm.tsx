@@ -47,6 +47,7 @@ export default function RequestPage() {
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [requestsError, setRequestsError] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const editId = searchParams.get("edit");
 
   const {
@@ -265,17 +266,13 @@ export default function RequestPage() {
 
 
   const handleDeleteRequest = async (id: string) => {
-    const confirmed = window.confirm("Delete this request?");
-    if (!confirmed) {
-      return;
-    }
-
     setRequestsError("");
 
     try {
       const response = await deleteRequest(id);
       if (response.success) {
         setRequests((prev) => prev.filter((item) => item._id !== id));
+        setDeleteConfirmId(null);
       } else {
         setRequestsError(response.message || "Failed to delete request");
       }
@@ -488,7 +485,7 @@ export default function RequestPage() {
                             </button>
                             <button
                               type="button"
-                              onClick={() => handleDeleteRequest(request._id)}
+                              onClick={() => setDeleteConfirmId(request._id)}
                               disabled={!isPending}
                               className="btn-ghost text-xs text-red-600 disabled:opacity-40"
                             >
@@ -511,6 +508,33 @@ export default function RequestPage() {
 
           {/* Edit section removed: editing now uses the main form above */}
         </div>
+
+        {deleteConfirmId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-md rounded-xl border border-zinc-200 bg-white p-6 shadow-xl">
+              <h3 className="text-lg font-semibold text-zinc-900">Delete Request?</h3>
+              <p className="mt-2 text-sm text-zinc-600">
+                Are you sure you want to delete this request? This action cannot be undone.
+              </p>
+              <div className="mt-6 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleDeleteRequest(deleteConfirmId)}
+                  className="flex-1 rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700 transition"
+                >
+                  Delete
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirmId(null)}
+                  className="flex-1 rounded-lg border border-zinc-300 px-4 py-2 font-semibold text-zinc-900 hover:bg-zinc-50 transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
