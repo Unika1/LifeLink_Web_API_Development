@@ -4,13 +4,11 @@ import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import SectionHeader from "@/app/_components/SectionHeader";
 import { handleLogout } from "@/lib/actions/auth-actions";
-import {
-  getHospitals,
-  getDonors,
-} from "@/lib/api/hospital";
-import { getRequests, updateRequest } from "@/lib/api/requests";
-import { getOrganRequests, updateOrganRequest } from "@/lib/api/organ-requests";
-import { getLatestEligibilityReport } from "@/lib/api/eligibility";
+import { getHospitals } from "@/lib/api/hospital/info";
+import { getDonors } from "@/lib/api/hospital/donors";
+import { getRequests, updateRequest } from "@/lib/api/admin/donations";
+import { getOrganRequests, updateOrganRequest } from "@/lib/api/admin/organ-donations";
+import { getLatestEligibilityReport } from "@/lib/api/hospital/eligibility";
 
 const hospitalNames = [
   "Om Hospital",

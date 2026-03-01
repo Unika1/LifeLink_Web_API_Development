@@ -1,4 +1,4 @@
-import axios from "./axios";
+import axios from "../axios";
 
 export interface OrganRequest {
   _id?: string;
@@ -55,21 +55,6 @@ export const getOrganRequestById = async (id: string, token?: string) => {
       message: error.response?.data?.message || error.message || "Failed to fetch organ request",
       data: null,
     };
-  }
-};
-
-export const createOrganRequest = async (formData: FormData) => {
-  try {
-    const response = await axios.post("/api/organ-requests", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-    return response.data;
-  } catch (error: any) {
-    throw new Error(
-      error.response?.data?.message || error.message || "Failed to create organ request"
-    );
   }
 };
 

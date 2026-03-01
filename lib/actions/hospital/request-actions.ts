@@ -1,6 +1,6 @@
 "use server";
 
-import { createRequest, getRequests, getRequestById } from "@/lib/api/requests";
+import { createRequest, getRequests, getRequestById } from "@/lib/api/donor/donations";
 import { getAuthToken } from "@/lib/cookie";
 
 interface CreateRequestData {

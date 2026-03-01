@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { adminCreateHospital } from "@/lib/api/hospital";
+import { adminCreateHospital } from "@/lib/api/admin/hospitals";
 import { hospitalSchema } from "../schema";
 
 export default function CreateHospitalForm() {

@@ -1,4 +1,4 @@
-import axios from "./axios";
+import axios from "../axios";
 
 export const getLatestEligibilityReport = async (userId: string) => {
   try {

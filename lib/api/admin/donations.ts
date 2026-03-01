@@ -1,4 +1,4 @@
-import axios from "./axios";
+import axios from "../axios";
 
 export const getRequests = async (params?: {
   hospitalId?: string;
@@ -51,25 +51,6 @@ export const getRequestById = async (id: string, token?: string) => {
       message: error.response?.data?.message || error.message || "Failed to fetch request",
       data: null,
     };
-  }
-};
-
-export const createRequest = async (data: {
-  hospitalName: string;
-  patientName: string;
-  bloodType: string;
-  unitsRequested: number;
-  contactPhone?: string;
-  neededBy?: string;
-  notes?: string;
-}) => {
-  try {
-    const response = await axios.post("/api/requests", data);
-    return response.data;
-  } catch (error: any) {
-    throw new Error(
-      error.response?.data?.message || error.message || "Failed to create request"
-    );
   }
 };
 

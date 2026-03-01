@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Cookies from "js-cookie";
-import { updateUserProfile } from "@/lib/api/user";
+import { updateUserProfile } from "@/lib/api/donor/profile";
 
 interface UserData {
   _id: string;

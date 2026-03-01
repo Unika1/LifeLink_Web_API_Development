@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import SectionHeader from "@/app/_components/SectionHeader";
-import { checkEligibility } from "@/lib/api/eligibility";
+import { checkEligibility } from "@/lib/api/donor/eligibility";
 import {
   createOrganRequest,
   getOrganRequestById,
   updateOrganRequest,
-} from "@/lib/api/organ-requests";
+} from "@/lib/api/donor/organ-donations";
 
 const hospitalNames = [
   "Om Hospital",

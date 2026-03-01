@@ -1,6 +1,6 @@
 "use server";
 
-import { adminGetUsers, adminGetUserById, adminCreateUser, adminUpdateUser, adminDeleteUser } from "@/lib/api/user";
+import { adminGetUsers, adminGetUserById, adminCreateUser, adminUpdateUser, adminDeleteUser } from "@/lib/api/admin/users";
 import { getAuthToken } from "@/lib/cookie";
 
 export async function serverAdminGetUsers(page?: number, limit?: number, role?: string) {

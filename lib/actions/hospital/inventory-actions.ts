@@ -1,6 +1,6 @@
 "use server";
 
-import { getHospitalInventory, updateHospitalInventory, createHospitalInventory, deleteHospitalInventory } from "@/lib/api/hospital";
+import { getHospitalInventory, updateHospitalInventory, createHospitalInventory, deleteHospitalInventory } from "@/lib/api/hospital/inventory";
 import { getAuthToken } from "@/lib/cookie";
 
 export async function serverGetHospitalInventory(id: string) {

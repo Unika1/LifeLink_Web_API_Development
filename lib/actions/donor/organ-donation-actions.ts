@@ -1,6 +1,6 @@
 "use server";
 
-import { getOrganRequests, getOrganRequestById } from "@/lib/api/organ-requests";
+import { getOrganRequests, getOrganRequestById } from "@/lib/api/donor/organ-donations";
 import { getAuthToken } from "@/lib/cookie";
 
 interface GetOrganDonationsParams {

@@ -1,6 +1,6 @@
 "use server";
 
-import { updateUserProfile, getUserById } from "@/lib/api/user";
+import { updateUserProfile, getUserById } from "@/lib/api/donor/profile";
 import { getAuthToken } from "@/lib/cookie";
 
 export async function serverUpdateUserProfile(id: string, formData: FormData) {

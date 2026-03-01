@@ -12,9 +12,9 @@ import {
   getRequestById,
   getRequests,
   updateRequest,
-} from "@/lib/api/requests";
+} from "@/lib/api/donor/donations";
 import { serverGetBloodRequests } from "@/lib/actions/donor/blood-donation-actions";
-import { checkEligibility } from "@/lib/api/eligibility";
+import { checkEligibility } from "@/lib/api/donor/eligibility";
 import { RequestData, requestSchema } from "../schema";
 // import { requestSchema, type RequestData } from "./schema";
 
@@ -244,7 +244,7 @@ export default function RequestPage() {
     try {
       setLoading(true);
       // Fetch latest data from backend
-      const response = await import("@/lib/api/requests").then(mod => mod.getRequestById(request._id));
+      const response = await import("@/lib/api/donor/donations").then(mod => mod.getRequestById(request._id));
       if (response.success && response.data) {
         reset({
           hospitalName: response.data.hospitalName || "",

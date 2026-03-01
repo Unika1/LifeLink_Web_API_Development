@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getUserData } from "@/lib/cookie";
-import { updateUserProfile } from "@/lib/api/user";
+import { updateUserProfile } from "@/lib/api/donor/profile";
 import Cookies from "js-cookie";
 
 interface UserData {

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { adminCreateUser } from "@/lib/api/user";
+import { adminCreateUser } from "@/lib/api/admin/users";
 
 export default function CreateUserForm() {
   const router = useRouter();

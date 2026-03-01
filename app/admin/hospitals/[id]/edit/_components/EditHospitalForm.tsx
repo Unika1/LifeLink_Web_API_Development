@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { adminUpdateHospital, getHospitalById } from "@/lib/api/hospital";
+import { adminUpdateHospital } from "@/lib/api/admin/hospitals";
+import { getHospitalById } from "@/lib/api/hospital/info";
 import { hospitalUpdateSchema } from "../../../schema";
 
 

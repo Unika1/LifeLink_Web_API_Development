@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { adminDeleteHospital, getHospitals } from "@/lib/api/hospital";
+import { adminDeleteHospital } from "@/lib/api/admin/hospitals";
+import { getHospitals } from "@/lib/api/hospital/info";
 import { useAdminSearch } from "../../context/AdminContext";
 
 interface Hospital {

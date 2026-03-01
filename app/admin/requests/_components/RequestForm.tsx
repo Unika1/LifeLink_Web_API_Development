@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import SectionHeader from "@/app/_components/SectionHeader";
-import { getRequests, updateRequest } from "@/lib/api/requests";
+import { getRequests, updateRequest } from "@/lib/api/admin/donations";
 import { useAdminSearch } from "../../context/AdminContext";
 
 interface RequestItem {

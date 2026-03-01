@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import SectionHeader from "@/app/_components/SectionHeader";
-import { adminGetUsers, adminDeleteUser } from "@/lib/api/user";
+import { adminGetUsers, adminDeleteUser } from "@/lib/api/admin/users";
 import { useAdminSearch } from "../context/AdminContext";
 
 interface User {

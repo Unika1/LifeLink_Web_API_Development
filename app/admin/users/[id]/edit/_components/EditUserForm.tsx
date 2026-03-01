@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Image from "next/image";
-import { adminGetUserById, adminUpdateUser } from "@/lib/api/user";
+import { adminGetUserById, adminUpdateUser } from "@/lib/api/admin/users";
 
 const editUserSchema = z.object({
   firstName: z.string().min(1, "First name is required"),

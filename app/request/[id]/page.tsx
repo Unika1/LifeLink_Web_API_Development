@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { getRequestById } from "@/lib/api/requests";
+import { getRequestById } from "@/lib/api/donor/donations";
 
 // Ensure this is treated as a dynamic route
 export const dynamic = "force-dynamic";

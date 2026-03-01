@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { adminGetUserById, adminDeleteUser } from "@/lib/api/user";
+import { adminGetUserById, adminDeleteUser } from "@/lib/api/admin/users";
 
 interface User {
   _id: string;

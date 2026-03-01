@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import SectionHeader from "@/app/_components/SectionHeader";
-import { getHospitals, getHospitalInventory } from "@/lib/api/hospital";
-import { adminGetUsers } from "@/lib/api/user";
+import { getHospitals } from "@/lib/api/hospital/info";
+import { getHospitalInventory } from "@/lib/api/hospital/inventory";
+import { adminGetUsers } from "@/lib/api/admin/users";
 
 interface Hospital {
   _id: string;

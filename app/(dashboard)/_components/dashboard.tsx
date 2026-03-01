@@ -8,8 +8,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
 import { serverGetBloodRequests } from "@/lib/actions/donor/blood-donation-actions";
 import { serverGetOrganRequests } from "@/lib/actions/donor/organ-donation-actions";
-import { updateRequest, deleteRequest } from "@/lib/api/requests";
-import { deleteOrganRequest } from "@/lib/api/organ-requests";
+import { updateRequest, deleteRequest } from "@/lib/api/hospital/requests";
+import { deleteOrganRequest } from "@/lib/api/admin/organ-donations";
 
 function Card({
   children,

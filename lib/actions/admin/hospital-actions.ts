@@ -1,6 +1,7 @@
 "use server";
 
-import { adminCreateHospital, adminUpdateHospital, adminDeleteHospital, getHospitals, getHospitalById } from "@/lib/api/hospital";
+import { adminCreateHospital, adminUpdateHospital, adminDeleteHospital } from "@/lib/api/admin/hospitals";
+import { getHospitals, getHospitalById } from "@/lib/api/hospital/info";
 import { getAuthToken } from "@/lib/cookie";
 
 interface CreateHospitalData {

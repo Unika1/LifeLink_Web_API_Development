@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SectionHeader from "@/app/_components/SectionHeader";
-import { checkEligibility, submitEligibilityQuestionnaire } from "@/lib/api/eligibility";
+import { checkEligibility, submitEligibilityQuestionnaire } from "@/lib/api/donor/eligibility";
 
 const genders = ["male", "female", "other"] as const;
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import SectionHeader from "@/app/_components/SectionHeader";
-import { getOrganRequests, updateOrganRequest } from "@/lib/api/organ-requests";
+import { getOrganRequests, updateOrganRequest } from "@/lib/api/admin/organ-donations";
 import { useAdminSearch } from "../../context/AdminContext";
 
 interface OrganRequestItem {

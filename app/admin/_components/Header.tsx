@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { handleLogout } from "@/lib/actions/auth-actions";
-import { getRequests } from "@/lib/api/requests";
-import { getOrganRequests } from "@/lib/api/organ-requests";
+import { getRequests } from "@/lib/api/admin/donations";
+import { getOrganRequests } from "@/lib/api/admin/organ-donations";
 import { useAdminSearch } from "../context/AdminContext";
 
 type NotificationItem = {
