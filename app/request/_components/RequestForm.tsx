@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import SectionHeader from "@/app/_components/SectionHeader";
-import Cookies from "js-cookie";
+import { useAuth } from "@/app/context/AuthContext";
 import {
   createRequest,
   deleteRequest,
@@ -13,6 +13,7 @@ import {
   getRequests,
   updateRequest,
 } from "@/lib/api/requests";
+import { serverGetBloodRequests } from "@/lib/actions/donor/blood-donation-actions";
 import { checkEligibility } from "@/lib/api/eligibility";
 import { RequestData, requestSchema } from "../schema";
 // import { requestSchema, type RequestData } from "./schema";
@@ -40,6 +41,8 @@ interface RequestItem {
 export default function RequestPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
+  const viewOnly = searchParams.get("viewOnly") === "true";
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -156,17 +159,22 @@ export default function RequestPage() {
       try {
         setRequestsLoading(true);
         setRequestsError("");
-        const userDataStr = Cookies.get("lifelink_user");
-        const user = userDataStr ? JSON.parse(userDataStr) : null;
-
+        
         if (!user?._id) {
+          setRequests([]);
           setRequestsLoading(false);
           return;
         }
-
-        const response = await getRequests({ requestedBy: user._id });
+        
+        const response = await serverGetBloodRequests({ requestedBy: user._id });
         if (response.success) {
-          setRequests(response.data || []);
+          const apiData = response.data;
+          const requestsArray = apiData?.success && apiData?.data
+            ? apiData.data
+            : Array.isArray(apiData)
+              ? apiData
+              : [];
+          setRequests(requestsArray);
         } else {
           setRequestsError(response.message || "Failed to load requests");
         }
@@ -178,7 +186,7 @@ export default function RequestPage() {
     };
 
     loadRequests();
-  }, []);
+  }, [user?._id]);
 
   const onSubmit = async (values: RequestData) => {
     setError("");
@@ -297,16 +305,18 @@ export default function RequestPage() {
   return (
     <div className="min-h-screen bg-[radial-gradient(1000px_circle_at_top,_#fff1f2,_#f8fafc_60%,_#eef2ff)] px-6 py-10 text-zinc-900">
       <div className="mx-auto max-w-3xl space-y-6">
-        <SectionHeader
-          eyebrow="Request"
-          title="Request Blood"
-          subtitle="Submit a request to the hospital of your choice."
-        />
+        {!viewOnly && (
+          <>
+            <SectionHeader
+              eyebrow="Request"
+              title="Request Blood"
+              subtitle="Submit a request to the hospital of your choice."
+            />
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="rounded-2xl border border-white/70 bg-white/90 p-8 shadow-xl shadow-slate-200/60 backdrop-blur"
-        >
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="rounded-2xl border border-white/70 bg-white/90 p-8 shadow-xl shadow-slate-200/60 backdrop-blur"
+            >
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label className="text-sm font-medium text-zinc-700">Hospital</label>
@@ -410,6 +420,8 @@ export default function RequestPage() {
             </button>
           </div>
         </form>
+          </>
+        )}
 
         <div className="pt-4">
           <SectionHeader

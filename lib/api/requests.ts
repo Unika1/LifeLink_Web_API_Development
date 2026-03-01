@@ -5,7 +5,7 @@ export const getRequests = async (params?: {
   hospitalName?: string;
   requestedBy?: string;
   status?: string;
-}) => {
+}, token?: string) => {
   try {
     const query = new URLSearchParams();
     if (params?.hospitalId) {
@@ -21,7 +21,8 @@ export const getRequests = async (params?: {
       query.append("status", params.status);
     }
     const suffix = query.toString() ? `?${query.toString()}` : "";
-    const response = await axios.get(`/api/requests${suffix}`);
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const response = await axios.get(`/api/requests${suffix}`, config);
     return response.data;
   } catch (error: any) {
     throw new Error(
@@ -30,10 +31,11 @@ export const getRequests = async (params?: {
   }
 };
 
-export const getRequestById = async (id: string) => {
+export const getRequestById = async (id: string, token?: string) => {
   try {
     console.log("Making request to: /api/requests/" + id);
-    const response = await axios.get(`/api/requests/${id}`);
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const response = await axios.get(`/api/requests/${id}`, config);
     console.log("getRequestById response:", response.data);
     return response.data;
   } catch (error: any) {
@@ -83,10 +85,12 @@ export const updateRequest = async (
     notes?: string;
     status?: string;
     scheduledAt?: string;
-  }
+  },
+  token?: string
 ) => {
   try {
-    const response = await axios.put(`/api/requests/${id}`, data);
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const response = await axios.put(`/api/requests/${id}`, data, config);
     return response.data;
   } catch (error: any) {
     throw new Error(
@@ -95,9 +99,10 @@ export const updateRequest = async (
   }
 };
 
-export const deleteRequest = async (id: string) => {
+export const deleteRequest = async (id: string, token?: string) => {
   try {
-    const response = await axios.delete(`/api/requests/${id}`);
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const response = await axios.delete(`/api/requests/${id}`, config);
     return response.data;
   } catch (error: any) {
     throw new Error(

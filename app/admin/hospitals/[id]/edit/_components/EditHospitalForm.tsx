@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { adminUpdateHospital, getHospitalById } from "@/lib/api/hospital";
-import { hospitalSchema } from "../../../schema";
+import { hospitalUpdateSchema } from "../../../schema";
 
 
 interface HospitalFormState {
@@ -88,7 +88,7 @@ export default function EditHospitalForm({ hospitalId }: { hospitalId: string })
     setSaving(true);
 
     try {
-      const parsed = hospitalSchema.safeParse(form);
+      const parsed = hospitalUpdateSchema.safeParse(form);
       if (!parsed.success) {
         const nextErrors: Record<string, string> = {};
         parsed.error.issues.forEach((issue) => {

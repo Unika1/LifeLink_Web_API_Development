@@ -1,8 +1,9 @@
 import axios from "./axios";
 
-export const getHospitals = async () => {
+export const getHospitals = async (token?: string) => {
   try {
-    const response = await axios.get("/api/hospitals");
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const response = await axios.get("/api/hospitals", config);
     return response.data;
   } catch (error: any) {
     throw new Error(
@@ -11,9 +12,10 @@ export const getHospitals = async () => {
   }
 };
 
-export const getHospitalById = async (id: string) => {
+export const getHospitalById = async (id: string, token?: string) => {
   try {
-    const response = await axios.get(`/api/hospitals/${id}`);
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const response = await axios.get(`/api/hospitals/${id}`, config);
     return response.data;
   } catch (error: any) {
     throw new Error(
@@ -22,9 +24,10 @@ export const getHospitalById = async (id: string) => {
   }
 };
 
-export const getHospitalInventory = async (id: string) => {
+export const getHospitalInventory = async (id: string, token?: string) => {
   try {
-    const response = await axios.get(`/api/hospitals/${id}/inventory`);
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const response = await axios.get(`/api/hospitals/${id}/inventory`, config);
     return response.data;
   } catch (error: any) {
     throw new Error(
@@ -37,10 +40,12 @@ export const getHospitalInventory = async (id: string) => {
 
 export const updateHospitalInventory = async (
   id: string,
-  data: { bloodType: string; unitsAvailable: number }
+  data: { bloodType: string; unitsAvailable: number },
+  token?: string
 ) => {
   try {
-    const response = await axios.put(`/api/hospitals/${id}/inventory`, data);
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const response = await axios.put(`/api/hospitals/${id}/inventory`, data, config);
     return response.data;
   } catch (error: any) {
     throw new Error(
@@ -53,10 +58,12 @@ export const updateHospitalInventory = async (
 
 export const createHospitalInventory = async (
   id: string,
-  data: { bloodType: string; unitsAvailable: number }
+  data: { bloodType: string; unitsAvailable: number },
+  token?: string
 ) => {
   try {
-    const response = await axios.post(`/api/hospitals/${id}/inventory`, data);
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const response = await axios.post(`/api/hospitals/${id}/inventory`, data, config);
     return response.data;
   } catch (error: any) {
     throw new Error(
@@ -69,11 +76,14 @@ export const createHospitalInventory = async (
 
 export const deleteHospitalInventory = async (
   id: string,
-  bloodType: string
+  bloodType: string,
+  token?: string
 ) => {
   try {
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
     const response = await axios.delete(
-      `/api/hospitals/${id}/inventory/${encodeURIComponent(bloodType)}`
+      `/api/hospitals/${id}/inventory/${encodeURIComponent(bloodType)}`,
+      config
     );
     return response.data;
   } catch (error: any) {

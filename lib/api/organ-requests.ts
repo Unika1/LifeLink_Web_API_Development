@@ -18,7 +18,7 @@ export const getOrganRequests = async (params?: {
   hospitalName?: string;
   requestedBy?: string;
   status?: string;
-}) => {
+}, token?: string) => {
   try {
     const query = new URLSearchParams();
     if (params?.hospitalId) {
@@ -34,7 +34,8 @@ export const getOrganRequests = async (params?: {
       query.append("status", params.status);
     }
     const suffix = query.toString() ? `?${query.toString()}` : "";
-    const response = await axios.get(`/api/organ-requests${suffix}`);
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const response = await axios.get(`/api/organ-requests${suffix}`, config);
     return response.data;
   } catch (error: any) {
     throw new Error(
@@ -43,9 +44,10 @@ export const getOrganRequests = async (params?: {
   }
 };
 
-export const getOrganRequestById = async (id: string) => {
+export const getOrganRequestById = async (id: string, token?: string) => {
   try {
-    const response = await axios.get(`/api/organ-requests/${id}`);
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const response = await axios.get(`/api/organ-requests/${id}`, config);
     return response.data;
   } catch (error: any) {
     return {
@@ -90,9 +92,10 @@ export const updateOrganRequest = async (
   }
 };
 
-export const deleteOrganRequest = async (id: string) => {
+export const deleteOrganRequest = async (id: string, token?: string) => {
   try {
-    const response = await axios.delete(`/api/organ-requests/${id}`);
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const response = await axios.delete(`/api/organ-requests/${id}`, config);
     return response.data;
   } catch (error: any) {
     throw new Error(

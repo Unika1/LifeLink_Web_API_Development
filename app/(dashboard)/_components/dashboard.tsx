@@ -5,10 +5,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import Cookies from "js-cookie";
-import { handleLogout } from "@/lib/actions/auth-actions";
-import { getRequests, updateRequest, deleteRequest } from "@/lib/api/requests";
-import { getOrganRequests, deleteOrganRequest } from "@/lib/api/organ-requests";
+import { useAuth } from "@/app/context/AuthContext";
+import { serverGetBloodRequests } from "@/lib/actions/donor/blood-donation-actions";
+import { serverGetOrganRequests } from "@/lib/actions/donor/organ-donation-actions";
+import { updateRequest, deleteRequest } from "@/lib/api/requests";
+import { deleteOrganRequest } from "@/lib/api/organ-requests";
 
 function Card({
   children,
@@ -32,10 +33,11 @@ function Card({
 export default function DashboardPage() {
   const router = useRouter();
   const pathname = usePathname();
+  const { user, logout } = useAuth();
   const [requests, setRequests] = useState<any[]>([]);
   const [requestsLoading, setRequestsLoading] = useState(true);
   const [requestsError, setRequestsError] = useState("");
-  const [userName, setUserName] = useState("Donor");
+  const userName = user?.firstName || "Donor";
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
   const [showRequestMenu, setShowRequestMenu] = useState(false);
@@ -57,44 +59,51 @@ export default function DashboardPage() {
     try {
       setRequestsLoading(true);
       setRequestsError("");
-      const userDataStr = Cookies.get("lifelink_user");
-      const user = userDataStr ? JSON.parse(userDataStr) : null;
 
       if (!user?._id) {
         setRequests([]);
         return;
       }
 
-      if (user?.firstName) {
-        setUserName(user.firstName);
-      }
-
       const [bloodResponse, organResponse] = await Promise.all([
-        getRequests({ requestedBy: user._id }),
-        getOrganRequests({ requestedBy: user._id }),
+        serverGetBloodRequests({ requestedBy: user._id }),
+        serverGetOrganRequests({ requestedBy: user._id }),
       ]);
 
-      if (!bloodResponse.success && !organResponse.success) {
-        setRequestsError(
-          bloodResponse.message || organResponse.message || "Failed to load requests"
-        );
+      // Handle blood response (wrapped by server action)
+      const bloodRequests = bloodResponse?.success
+        ? (bloodResponse.data?.success && bloodResponse.data?.data 
+            ? bloodResponse.data.data 
+            : Array.isArray(bloodResponse.data) 
+              ? bloodResponse.data 
+              : [])
+          .map((item: any) => ({
+            ...item,
+            requestType: "blood",
+            status: item.status || "pending",
+          }))
+        : [];
+
+      // Handle organ response (wrapped by server action)
+      const organRequests = organResponse?.success
+        ? (organResponse.data?.success && organResponse.data?.data
+            ? organResponse.data.data
+            : Array.isArray(organResponse.data)
+              ? organResponse.data
+              : []).map((item: any) => ({
+            ...item,
+            requestType: "organ",
+            bloodType: "Organ",
+            unitsRequested: null,
+            status: item.status || "pending",
+          }))
+        : [];
+
+
+      if (bloodRequests.length === 0 && organRequests.length === 0) {
         setRequests([]);
         return;
       }
-
-      const bloodRequests = (bloodResponse.data || []).map((item: any) => ({
-        ...item,
-        requestType: "blood",
-        status: item.status || "pending",
-      }));
-
-      const organRequests = (organResponse.data || []).map((item: any) => ({
-        ...item,
-        requestType: "organ",
-        bloodType: "Organ",
-        unitsRequested: null,
-        status: item.status || "pending",
-      }));
 
       setRequests([...bloodRequests, ...organRequests]);
     } catch (err: any) {
@@ -177,7 +186,7 @@ export default function DashboardPage() {
       window.clearInterval(intervalId);
       window.removeEventListener("focus", handleWindowFocus);
     };
-  }, []);
+  }, [user?._id]);
 
   const handleFulfill = async (requestId: string) => {
     try {
@@ -448,14 +457,13 @@ export default function DashboardPage() {
                 )}
               </div>
               
-              <form action={handleLogout}>
-                <button
-                  type="submit"
-                  className="rounded-lg bg-red-50 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-100"
-                >
-                  Logout
-                </button>
-              </form>
+              <button
+                type="button"
+                onClick={logout}
+                className="rounded-lg bg-red-50 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-100"
+              >
+                Logout
+              </button>
             </div>
           </div>
         </div>
@@ -603,7 +611,7 @@ export default function DashboardPage() {
                 <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600">
                   Total {totalRequests}
                 </span>
-                <Link href="/request" className="text-xs font-semibold text-[#d4002a] hover:underline">
+                <Link href="/request?viewOnly=true" className="text-xs font-semibold text-[#d4002a] hover:underline">
                   View all
                 </Link>
               </div>

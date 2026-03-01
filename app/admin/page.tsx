@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import SectionHeader from "@/app/_components/SectionHeader";
 import { useAdminSearch } from "./context/AdminContext";
-import { adminGetUsers } from "@/lib/api/user";
-import { getHospitals } from "@/lib/api/hospital";
-import { getRequests } from "@/lib/api/requests";
+import { serverAdminGetUsers } from "@/lib/actions/admin/user-actions";
+import { serverGetHospitals } from "@/lib/actions/admin/hospital-actions";
+import { serverGetRequests } from "@/lib/actions/admin/request-actions";
 
 interface User {
   _id: string;
@@ -89,30 +89,43 @@ export default function AdminDashboard() {
       setLoading(true);
       setError("");
       const [usersResponse, hospitalsResponse, requestsResponse] = await Promise.all([
-        adminGetUsers(),
-        getHospitals(),
-        getRequests(),
+        serverAdminGetUsers(),
+        serverGetHospitals(),
+        serverGetRequests(),
       ]);
 
-      // Handle users response
-      if (usersResponse?.success && usersResponse?.data) {
-        setUsers(Array.isArray(usersResponse.data) ? usersResponse.data : []);
-      } else if (Array.isArray(usersResponse)) {
-        setUsers(usersResponse);
+      // Handle users response - API returns { success, data: [...] }, server action wraps it
+      if (usersResponse?.success) {
+        const apiData = usersResponse.data;
+        // API response might be { success: true, data: [...] } or just [...]
+        const usersArray = apiData?.success && apiData?.data 
+          ? apiData.data 
+          : Array.isArray(apiData) 
+            ? apiData 
+            : [];
+        setUsers(usersArray);
       }
 
       // Handle hospitals response
-      if (hospitalsResponse?.success && hospitalsResponse?.data) {
-        setHospitals(Array.isArray(hospitalsResponse.data) ? hospitalsResponse.data : []);
-      } else if (Array.isArray(hospitalsResponse)) {
-        setHospitals(hospitalsResponse);
+      if (hospitalsResponse?.success) {
+        const apiData = hospitalsResponse.data;
+        const hospitalsArray = apiData?.success && apiData?.data 
+          ? apiData.data 
+          : Array.isArray(apiData) 
+            ? apiData 
+            : [];
+        setHospitals(hospitalsArray);
       }
 
       // Handle requests response
-      if (requestsResponse?.success && requestsResponse?.data) {
-        setRequests(Array.isArray(requestsResponse.data) ? requestsResponse.data : []);
-      } else if (Array.isArray(requestsResponse)) {
-        setRequests(requestsResponse);
+      if (requestsResponse?.success) {
+        const apiData = requestsResponse.data;
+        const requestsArray = apiData?.success && apiData?.data 
+          ? apiData.data 
+          : Array.isArray(apiData) 
+            ? apiData 
+            : [];
+        setRequests(requestsArray);
       }
     } catch (err: any) {
       console.error("Error loading dashboard data:", err);

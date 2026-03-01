@@ -22,9 +22,10 @@ export const getUsers = async () => {
   }
 };
 
-export const getUserById = async (id: string) => {
+export const getUserById = async (id: string, token?: string) => {
   try {
-    const response = await axios.get(`/api/auth/users/${id}`);
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const response = await axios.get(`/api/auth/users/${id}`, config);
     return response.data;
   } catch (error: any) {
     throw new Error(
@@ -59,7 +60,8 @@ export const deleteUser = async (id: string) => {
 export const adminGetUsers = async (
   page?: number,
   limit?: number,
-  role?: string
+  role?: string,
+  token?: string
 ) => {
   try {
     const query = new URLSearchParams();
@@ -75,7 +77,8 @@ export const adminGetUsers = async (
 
     const suffix = query.toString() ? `?${query.toString()}` : "";
     const url = `/api/admin/users${suffix}`;
-    const response = await axios.get(url);
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const response = await axios.get(url, config);
     return response.data;
   } catch (error: any) {
     throw new Error(
@@ -84,9 +87,10 @@ export const adminGetUsers = async (
   }
 };
 
-export const adminGetUserById = async (id: string) => {
+export const adminGetUserById = async (id: string, token?: string) => {
   try {
-    const response = await axios.get(`/api/admin/users/${id}`);
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const response = await axios.get(`/api/admin/users/${id}`, config);
     return response.data;
   } catch (error: any) {
     throw new Error(
@@ -95,9 +99,10 @@ export const adminGetUserById = async (id: string) => {
   }
 };
 
-export const adminCreateUser = async (formData: FormData) => {
+export const adminCreateUser = async (formData: FormData, token?: string) => {
   try {
-    const response = await axios.post("/api/admin/users", formData);
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const response = await axios.post("/api/admin/users", formData, config);
     return response.data;
   } catch (error: any) {
     throw new Error(
@@ -106,9 +111,10 @@ export const adminCreateUser = async (formData: FormData) => {
   }
 };
 
-export const adminUpdateUser = async (id: string, formData: FormData) => {
+export const adminUpdateUser = async (id: string, formData: FormData, token?: string) => {
   try {
-    const response = await axios.put(`/api/admin/users/${id}`, formData);
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const response = await axios.put(`/api/admin/users/${id}`, formData, config);
     return response.data;
   } catch (error: any) {
     throw new Error(
@@ -117,9 +123,10 @@ export const adminUpdateUser = async (id: string, formData: FormData) => {
   }
 };
 
-export const adminDeleteUser = async (id: string) => {
+export const adminDeleteUser = async (id: string, token?: string) => {
   try {
-    const response = await axios.delete(`/api/admin/users/${id}`);
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const response = await axios.delete(`/api/admin/users/${id}`, config);
     return response.data;
   } catch (error: any) {
     throw new Error(
@@ -128,9 +135,10 @@ export const adminDeleteUser = async (id: string) => {
   }
 };
 
-export const updateUserProfile = async (id: string, formData: FormData) => {
+export const updateUserProfile = async (id: string, formData: FormData, token?: string) => {
   try {
-    const response = await axios.put(`/api/auth/${id}`, formData);
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const response = await axios.put(`/api/auth/${id}`, formData, config);
     return response.data;
   } catch (error: any) {
     throw new Error(

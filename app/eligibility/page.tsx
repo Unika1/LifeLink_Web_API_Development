@@ -55,11 +55,29 @@ export default function EligibilityPage() {
       return;
     }
 
+    const age = Number(form.age);
+    const weight = Number(form.weight);
+
+    if (Number.isNaN(age) || Number.isNaN(weight)) {
+      setError("Age and weight must be valid numbers");
+      return;
+    }
+
+    if (age < 18 || age > 100) {
+      setError("Age must be between 18 and 100");
+      return;
+    }
+
+    if (weight < 40 || weight > 300) {
+      setError("Weight must be between 40 and 300 kg");
+      return;
+    }
+
     try {
       setSaving(true);
       await submitEligibilityQuestionnaire({
-        age: Number(form.age),
-        weight: Number(form.weight),
+        age,
+        weight,
         gender: form.gender as (typeof genders)[number],
         hasBloodPressure: form.hasBloodPressure,
         hasDiabetes: form.hasDiabetes,
@@ -125,6 +143,7 @@ export default function EligibilityPage() {
               <input
                 type="number"
                 min={18}
+                max={65}
                 value={form.age}
                 onChange={(event) => handleChange("age", event.target.value)}
                 className="mt-2 w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm text-zinc-900 outline-none focus:border-[#d4002a] focus:ring-4 focus:ring-red-100"
@@ -136,6 +155,7 @@ export default function EligibilityPage() {
               <input
                 type="number"
                 min={40}
+                max={300}
                 value={form.weight}
                 onChange={(event) => handleChange("weight", event.target.value)}
                 className="mt-2 w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm text-zinc-900 outline-none focus:border-[#d4002a] focus:ring-4 focus:ring-red-100"
