@@ -7,6 +7,12 @@ export default defineConfig({
     setupFiles: ["./test/setup.ts"],
     globals: true,
     clearMocks: true,
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/e2e/**", // Exclude Playwright E2E tests
+      "**/.{idea,git,cache,output,temp}/**",
+    ],
   },
   resolve: {
     alias: {

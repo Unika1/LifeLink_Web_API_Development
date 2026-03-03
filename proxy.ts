@@ -29,7 +29,6 @@ export function proxy(request: NextRequest) {
   const isAdminRoute = adminRoutes.some(route => pathname.startsWith(route));
   const isUserRoute = userRoutes.some(route => pathname.startsWith(route));
   const isHospitalRoute = hospitalRoutes.some(route => pathname.startsWith(route));
-
   if (pathname === '/' && token && user?.role) {
     if (user.role === 'admin') {
       return NextResponse.redirect(new URL('/admin', request.url));
@@ -41,12 +40,10 @@ export function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
   }
-  
   // Redirect to login if not authenticated and not on public route
   if (!token && !isPublicRoute) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
-
   // Check role-based access
   if (token && user) {
     if (isAdminRoute && user.role !== 'admin') {
@@ -62,12 +59,8 @@ export function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL('/', request.url));
     }
   }
-
-
-
   return NextResponse.next();
 }
-
 export const config = {
   matcher: [
     '/',
