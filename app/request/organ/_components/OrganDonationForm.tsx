@@ -5,18 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import SectionHeader from "@/app/_components/SectionHeader";
 import { checkEligibility } from "@/lib/api/donor/eligibility";
+import { getHospitals } from "@/lib/api/hospital/info";
 import {
   createOrganRequest,
   getOrganRequestById,
   updateOrganRequest,
 } from "@/lib/api/donor/organ-donations";
-
-const hospitalNames = [
-  "Om Hospital",
-  "Norvic International Hospital",
-  "Nepal Medicity Hospital",
-  "B & B Hospital",
-];
 
 type OrganRequestFormData = {
   hospitalName: string;
@@ -38,6 +32,7 @@ export default function OrganRequestPage() {
   const [reportFile, setReportFile] = useState<File | null>(null);
   const [existingReportUrl, setExistingReportUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hospitalNames, setHospitalNames] = useState<string[]>([]);
 
   const {
     register,
@@ -63,6 +58,14 @@ export default function OrganRequestPage() {
     const ensureEligibility = async () => {
       try {
         setLoading(true);
+        
+        // Load hospital names from database
+        const hospitalsResponse = await getHospitals();
+        if (hospitalsResponse.success && hospitalsResponse.data) {
+          const names = hospitalsResponse.data.map((h: any) => h.name);
+          setHospitalNames(names);
+        }
+        
         if (!requestId) {
           const eligibility = await checkEligibility();
           if (!eligibility?.data?.eligible) {
@@ -121,6 +124,13 @@ export default function OrganRequestPage() {
             formData.append("notes", values.notes.trim());
           }
           formData.append("report", reportFile);
+          console.log("Updating organ request with file. FormData entries:", {
+            hospitalName: values.hospitalName,
+            donorName: values.donorName.trim(),
+            notes: values.notes?.trim(),
+            file: reportFile.name,
+            fileSize: reportFile.size,
+          });
           response = await updateOrganRequest(requestId, formData);
         } else {
           response = await updateOrganRequest(requestId, {
@@ -137,13 +147,23 @@ export default function OrganRequestPage() {
           formData.append("notes", values.notes.trim());
         }
         formData.append("report", reportFile as File);
+        console.log("Creating organ request with file. FormData entries:", {
+          hospitalName: values.hospitalName,
+          donorName: values.donorName.trim(),
+          notes: values.notes?.trim(),
+          file: (reportFile as File).name,
+          fileSize: (reportFile as File).size,
+        });
         response = await createOrganRequest(formData);
+        console.log("Organ request creation response:", response);
       }
       if (!response.success) {
         setError(response.message || "Failed to submit organ request");
+        console.error("Request failed:", response);
         return;
       }
 
+      console.log("Organ request submitted successfully. Data:", response.data);
       setSuccess(requestId ? "Organ request updated successfully" : "Organ request submitted successfully");
       reset();
       setReportFile(null);
@@ -156,6 +176,7 @@ export default function OrganRequestPage() {
         }
       }, 800);
     } catch (err: any) {
+      console.error("Form submission error:", err);
       setError(err.message || "Failed to submit organ request");
     }
   };

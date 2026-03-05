@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import SectionHeader from "@/app/_components/SectionHeader";
 import { adminGetUsers, adminDeleteUser } from "@/lib/api/admin/users";
-import { useAdminSearch } from "../context/AdminContext";
+import { useAdminSearch } from "@/app/context/AdminContext";
 
 interface User {
   _id: string;

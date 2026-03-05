@@ -10,13 +10,6 @@ import { getRequests, updateRequest } from "@/lib/api/admin/donations";
 import { getOrganRequests, updateOrganRequest } from "@/lib/api/admin/organ-donations";
 import { getLatestEligibilityReport } from "@/lib/api/hospital/eligibility";
 
-const hospitalNames = [
-  "Om Hospital",
-  "Norvic International Hospital",
-  "Nepal Medicity Hospital",
-  "B & B Hospital",
-];
-
 function Card({
   children,
   className = "",
@@ -201,7 +194,7 @@ export default function HospitalDashboardPage() {
         setSelectedHospitalName(matchedHospital.name);
 
         const [donorsResponse, requestsResponse, organRequestsResponse] = await Promise.all([
-          getDonors(),
+          getDonors(matchedHospital._id, matchedHospital.name),
           getRequests({ hospitalId: matchedHospital._id, hospitalName: matchedHospital.name }),
           getOrganRequests({ hospitalId: matchedHospital._id, hospitalName: matchedHospital.name }),
         ]);
@@ -221,11 +214,27 @@ export default function HospitalDashboardPage() {
     }
   };
 
-  const handleHospitalChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleHospitalChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
     const name = event.target.value;
     setSelectedHospitalName(name);
     const selected = hospitalOptions.find((item) => item.name === name);
-    fetchRequests(name, selected?._id);
+    
+    // Fetch both requests and donors for the selected hospital
+    try {
+      const [donorsResponse] = await Promise.all([
+        getDonors(selected?._id, name),
+        fetchRequests(name, selected?._id),
+      ]);
+
+      if (donorsResponse.success) {
+        setDonors(donorsResponse.data || []);
+      } else {
+        setDonors([]);
+      }
+    } catch (err) {
+      console.error("Failed to fetch donors:", err);
+      setDonors([]);
+    }
   };
 
   const handleHospitalSelectFocus = async () => {
@@ -530,12 +539,12 @@ export default function HospitalDashboardPage() {
                 onFocus={handleHospitalSelectFocus}
                 className="rounded-xl border border-white/70 bg-white/90 px-4 py-2 text-sm text-zinc-700 shadow-sm"
               >
-                {(hospitalOptions.length ? hospitalOptions : hospitalNames).map((item) => (
+                {hospitalOptions.map((hospital) => (
                   <option
-                    key={typeof item === "object" ? item._id : item}
-                    value={typeof item === "object" ? item.name : item}
+                    key={hospital._id}
+                    value={hospital.name}
                   >
-                    {typeof item === "object" ? item.name : item}
+                    {hospital.name}
                   </option>
                 ))}
               </select>

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import Cookies from "js-cookie";
 import { updateUserProfile } from "@/lib/api/donor/profile";
 
@@ -442,28 +441,6 @@ export default function ProfileForm() {
           </div>
         </div>
       </main>
-
-      {/* Bottom Navigation */}
-      <footer className="border-t border-zinc-200 bg-white mt-12">
-        <div className="mx-auto max-w-7xl px-6 py-8">
-          <div className="grid grid-cols-3 gap-8">
-            <Link href="/dashboard" className="flex flex-col items-center gap-3 rounded-xl p-4 hover:bg-zinc-50 transition">
-              <span className="text-4xl">🏠</span>
-              <span className="text-sm font-semibold text-zinc-900">Home</span>
-            </Link>
-
-            <Link href="/request" className="flex flex-col items-center gap-3 rounded-xl p-4 hover:bg-zinc-50 transition">
-              <span className="text-4xl">🧾</span>
-              <span className="text-sm font-semibold text-zinc-900">Request</span>
-            </Link>
-
-            <Link href="/user/profile" className="flex flex-col items-center gap-3 rounded-xl p-4 hover:bg-zinc-50 transition bg-[#d4002a]/5">
-              <span className="text-4xl">👤</span>
-              <span className="text-sm font-semibold text-[#d4002a]">Profile</span>
-            </Link>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import Sidebar from "./_components/Sidebar";
 import Header from "./_components/Header";
-import { AdminProvider } from "./context/AdminContext";
+import { AdminProvider } from "@/app/context/AdminContext";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (

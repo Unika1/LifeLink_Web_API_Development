@@ -51,7 +51,7 @@ export default function EligibilityPage() {
     setSuccess("");
 
     if (!form.age || !form.weight || !form.gender) {
-      setError("This field is required");
+      setError("Age, weight, and gender are required");
       return;
     }
 
@@ -70,6 +70,45 @@ export default function EligibilityPage() {
 
     if (weight < 40 || weight > 300) {
       setError("Weight must be between 40 and 300 kg");
+      return;
+    }
+
+    const hasMedicalCondition = 
+      form.hasBloodPressure || 
+      form.hasDiabetes || 
+      form.hasHeartDisease || 
+      form.hasCancer || 
+      form.hasHepatitis || 
+      form.hasHIV || 
+      form.hasTuberculosis;
+
+    // Either confirm "No diseases" OR check at least one medical condition
+    if (!form.noDiseases && !hasMedicalCondition) {
+      setError("Please confirm your medical history. Either select 'No diseases' or check any conditions you have.");
+      return;
+    }
+
+    // If they say "No diseases", they shouldn't have any diseases checked
+    if (form.noDiseases && hasMedicalCondition) {
+      setError("You cannot select 'No diseases' while also selecting medical conditions. Please correct this.");
+      return;
+    }
+
+    // If they have recent travel, they must specify countries
+    if (form.recentTravel && !form.travelCountries.trim()) {
+      setError("Please specify which countries you traveled to recently");
+      return;
+    }
+
+    // If they have active infection, they must provide details
+    if (form.activeInfection && !form.infectionDetails.trim()) {
+      setError("Please provide details about your active infection");
+      return;
+    }
+
+    // If they are taking medications, they must specify which ones
+    if (form.takingMedications && !form.medications.trim()) {
+      setError("Please specify which medications you are taking");
       return;
     }
 
@@ -179,7 +218,14 @@ export default function EligibilityPage() {
             </div>
           </div>
 
-          <div className="mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-2">
+          <div className="mt-6 pt-4 border-t border-zinc-200">
+            <h3 className="text-sm font-semibold text-zinc-900 mb-3">
+              Medical History <span className="text-red-600">*</span> (Required)
+            </h3>
+            <p className="text-xs text-zinc-600 mb-3">
+              Please confirm your medical status. Either select "No diseases" OR check any conditions you have.
+            </p>
+            <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
             <label className="flex items-center gap-2 text-sm text-zinc-700">
               <input
                 type="checkbox"
@@ -309,11 +355,12 @@ export default function EligibilityPage() {
               Had blood transfusion
             </label>
           </div>
+          </div>
 
           {form.recentTravel && (
             <div className="mt-4">
               <label className="text-sm font-medium text-zinc-700">
-                Travel countries (comma separated)
+                Travel countries (comma separated) <span className="text-red-600">*</span>
               </label>
               <input
                 value={form.travelCountries}
@@ -327,7 +374,7 @@ export default function EligibilityPage() {
           {form.takingMedications && (
             <div className="mt-4">
               <label className="text-sm font-medium text-zinc-700">
-                Medications (comma separated)
+                Medications (comma separated) <span className="text-red-600">*</span>
               </label>
               <input
                 value={form.medications}
@@ -340,7 +387,7 @@ export default function EligibilityPage() {
 
           {form.activeInfection && (
             <div className="mt-4">
-              <label className="text-sm font-medium text-zinc-700">Infection details</label>
+              <label className="text-sm font-medium text-zinc-700">Infection details <span className="text-red-600">*</span></label>
               <input
                 value={form.infectionDetails}
                 onChange={(event) => handleChange("infectionDetails", event.target.value)}

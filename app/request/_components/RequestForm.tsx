@@ -15,16 +15,11 @@ import {
 } from "@/lib/api/donor/donations";
 import { serverGetBloodRequests } from "@/lib/actions/donor/blood-donation-actions";
 import { checkEligibility } from "@/lib/api/donor/eligibility";
+import { getHospitals } from "@/lib/api/hospital/info";
 import { RequestData, requestSchema } from "../schema";
 // import { requestSchema, type RequestData } from "./schema";
 
 const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
-const hospitalNames = [
-  "Om Hospital",
-  "Norvic International Hospital",
-  "Nepal Medicity Hospital",
-  "B & B Hospital",
-];
 
 interface RequestItem {
   _id: string;
@@ -51,6 +46,7 @@ export default function RequestPage() {
   const [requestsError, setRequestsError] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [hospitalNames, setHospitalNames] = useState<string[]>([]);
   const editId = searchParams.get("edit");
 
   const {
@@ -142,6 +138,13 @@ export default function RequestPage() {
         if (!eligibility?.data?.eligible) {
           router.push("/eligibility");
           return;
+        }
+        
+        // Fetch hospital names from database
+        const hospitalsResponse = await getHospitals();
+        if (hospitalsResponse.success && hospitalsResponse.data) {
+          const names = hospitalsResponse.data.map((h: any) => h.name);
+          setHospitalNames(names);
         }
       } catch (err: any) {
         router.push("/eligibility");

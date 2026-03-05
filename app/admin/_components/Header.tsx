@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { handleLogout } from "@/lib/actions/auth-actions";
 import { getRequests } from "@/lib/api/admin/donations";
 import { getOrganRequests } from "@/lib/api/admin/organ-donations";
-import { useAdminSearch } from "../context/AdminContext";
+import { useAdminSearch } from "@/app/context/AdminContext";
 
 type NotificationItem = {
   id: string;

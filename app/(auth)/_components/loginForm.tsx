@@ -7,10 +7,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginData } from "../schema";
 import { handleLogin } from "@/lib/actions/auth-actions";
+import { useAuth } from "@/app/context/AuthContext";
 import Cookies from "js-cookie";
 
 export default function LoginForm() {
   const router = useRouter();
+  const { setUser, setIsAuthenticated } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState("");
 
@@ -37,6 +39,10 @@ export default function LoginForm() {
       Cookies.set("lifelink_user", JSON.stringify(res.data), { path: "/" });
       window.localStorage.setItem("lifelink_token", res.token);
       window.localStorage.setItem("lifelink_user", JSON.stringify(res.data));
+      
+      // Update AuthContext state immediately
+      setUser(res.data);
+      setIsAuthenticated(true);
     }
 
     // Redirect based on user role

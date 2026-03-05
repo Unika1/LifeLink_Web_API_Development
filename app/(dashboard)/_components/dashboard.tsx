@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
 import { serverGetBloodRequests } from "@/lib/actions/donor/blood-donation-actions";
@@ -54,6 +54,8 @@ export default function DashboardPage() {
   const [locationName, setLocationName] = useState<string>("");
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState("");
+
+  const hasInitialized = useRef(false);
 
   const loadRequests = async () => {
     try {
@@ -170,12 +172,17 @@ export default function DashboardPage() {
       }
     }
 
-    loadRequests();
+    if (!user?._id) {
+      return;
+    }
 
-    const intervalId = window.setInterval(() => {
+    // Load requests only once
+    if (!hasInitialized.current) {
+      hasInitialized.current = true;
       loadRequests();
-    }, 10000);
+    }
 
+    // Optional: Reload requests when user returns to the tab
     const handleWindowFocus = () => {
       loadRequests();
     };
@@ -183,7 +190,6 @@ export default function DashboardPage() {
     window.addEventListener("focus", handleWindowFocus);
 
     return () => {
-      window.clearInterval(intervalId);
       window.removeEventListener("focus", handleWindowFocus);
     };
   }, [user?._id]);

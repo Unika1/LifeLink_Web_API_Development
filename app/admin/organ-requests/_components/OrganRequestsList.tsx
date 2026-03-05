@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import SectionHeader from "@/app/_components/SectionHeader";
 import { getOrganRequests, updateOrganRequest } from "@/lib/api/admin/organ-donations";
-import { useAdminSearch } from "../../context/AdminContext";
+import { useAdminSearch } from "@/app/context/AdminContext";
 
 interface OrganRequestItem {
   _id: string;
@@ -20,12 +20,20 @@ interface OrganRequestItem {
 const statusOptions = ["pending", "approved", "rejected", "fulfilled"];
 
 export default function OrganRequestsList() {
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5050";
   const { searchQuery } = useAdminSearch();
   const [requests, setRequests] = useState<OrganRequestItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updating, setUpdating] = useState<Record<string, boolean>>({});
   const [filterStatus, setFilterStatus] = useState<string>("all");
+
+  const getReportUrl = (path?: string | null) => {
+    if (!path) return null;
+    if (path.startsWith("http")) return path;
+    const normalized = path.startsWith("/") ? path : `/${path}`;
+    return `${apiBaseUrl}${normalized}`;
+  };
 
   useEffect(() => {
     loadRequests();
@@ -216,7 +224,7 @@ export default function OrganRequestsList() {
                     <td className="px-6 py-4">
                       {request.reportUrl ? (
                         <a
-                          href={request.reportUrl}
+                          href={getReportUrl(request.reportUrl) || "#"}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:underline"

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import SectionHeader from "@/app/_components/SectionHeader";
-import { useAdminSearch } from "./context/AdminContext";
+import { useAdminSearch } from "@/app/context/AdminContext";
 import { serverAdminGetUsers } from "@/lib/actions/admin/user-actions";
 import { serverGetHospitals } from "@/lib/actions/admin/hospital-actions";
 import { serverGetRequests } from "@/lib/actions/admin/request-actions";

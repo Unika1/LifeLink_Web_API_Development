@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import SectionHeader from "@/app/_components/SectionHeader";
 import { getRequests, updateRequest } from "@/lib/api/admin/donations";
-import { useAdminSearch } from "../../context/AdminContext";
+import { useAdminSearch } from "@/app/context/AdminContext";
 
 interface RequestItem {
   _id: string;
